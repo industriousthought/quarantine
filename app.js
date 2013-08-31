@@ -7,7 +7,7 @@ io.configure(function () {
   io.set("polling duration", 10); 
 });
 
-server.listen(80);
+server.listen(process.env.PORT);
 
 app.get('/joystick.png', function (req, res) {
   res.sendfile(__dirname + '/joystick.png');
