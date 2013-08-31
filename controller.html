@@ -11,7 +11,7 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    var socket = io.connect('192.168.0.12/con');
+    var socket = io.connect(window.location.protocol + "//" + window.location.host + '/con');
     socket.on('youAre', function (data) {
     });
     socket.on('deadPlayer', function (data) {
