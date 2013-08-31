@@ -1,0 +1,83 @@
+<!-- Javier, there are only two things you need to change to test different sprite sheets.
+I'll explain each in comments below -->
+
+
+<html>
+    <head>
+        <script>
+if (!window.requestAnimationFrame) {
+  window.requestAnimationFrame = (window.webkitRequestAnimationFrame ||
+                                  window.mozRequestAnimationFrame ||
+                                  window.msRequestAnimationFrame ||
+                                  window.oRequestAnimationFrame ||
+                                  function (callback) {
+                                    return window.setTimeout(callback, 17 /*~ 1000/60*/);
+                                  });
+}
+
+if (!window.cancelAnimationFrame) {
+  window.cancelAnimationFrame = (window.cancelRequestAnimationFrame ||
+                                 window.webkitCancelAnimationFrame || window.webkitCancelRequestAnimationFrame ||
+                                 window.mozCancelAnimationFrame || window.mozCancelRequestAnimationFrame ||
+                                 window.msCancelAnimationFrame || window.msCancelRequestAnimationFrame ||
+                                 window.oCancelAnimationFrame || window.oCancelRequestAnimationFrame ||
+                                 window.clearTimeout);
+}
+            var init = function() {
+
+                var animate = function() {
+                    (function animloop(){
+                        canvas.width = canvas.width;
+                        tick++
+                        if (tick > 5) { 
+                            tick = 0;
+                            if (currentTile > tiles - 2) {
+                                currentTile = 0;
+                            } else {
+                                currentTile++
+                            }
+                        }
+
+                        ctx.drawImage(img, currentTile * tileWidth, 0, tileWidth, tileHeight, 0, 0, tileWidth, tileHeight);
+
+                        window.requestAnimationFrame(animloop);
+                    })();
+                };
+
+                var canvas = document.getElementById('canvas');
+                var ctx = canvas.getContext('2d');
+                var currentTile = 0;
+                var tick = 0;
+                //*************************************
+                //change this next value depending on the number of tiles in the animation
+                var tiles = 5;
+                var tileWidth = null;
+                var tileHeight = null;
+                img = new Image();
+
+                img.onload = function() {
+                    tileWidth = img.width / tiles;
+                    tileHeight = img.height;
+                    animate();
+                };
+
+                //*********************************
+                //this is the name of the file you want to test. Make sure it's in the
+                //the same directory as the script
+                img.src = 'zombieChase3.png';
+
+
+
+            };
+
+        </script>
+    </head>
+
+    <body onload="init()">
+
+        <canvas id="canvas" width="500" height="500">
+        You need a browser that supports the canvas element.
+        </canvas>
+
+    </body>
+</html>

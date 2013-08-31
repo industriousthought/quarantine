@@ -1,0 +1,13 @@
+.sensor {
+    position: absolute;
+    
+
+}
+
+
+.joystick {
+    position: absolute;
+    visibility: hidden;
+
+
+}

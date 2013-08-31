@@ -1,0 +1,167 @@
+
+
+<html>
+    <head>
+        <script>
+if (!window.requestAnimationFrame) {
+  window.requestAnimationFrame = (window.webkitRequestAnimationFrame ||
+                                  window.mozRequestAnimationFrame ||
+                                  window.msRequestAnimationFrame ||
+                                  window.oRequestAnimationFrame ||
+                                  function (callback) {
+                                    return window.setTimeout(callback, 17 /*~ 1000/60*/);
+                                  });
+}
+
+if (!window.cancelAnimationFrame) {
+  window.cancelAnimationFrame = (window.cancelRequestAnimationFrame ||
+                                 window.webkitCancelAnimationFrame || window.webkitCancelRequestAnimationFrame ||
+                                 window.mozCancelAnimationFrame || window.mozCancelRequestAnimationFrame ||
+                                 window.msCancelAnimationFrame || window.msCancelRequestAnimationFrame ||
+                                 window.oCancelAnimationFrame || window.oCancelRequestAnimationFrame ||
+                                 window.clearTimeout);
+}
+
+var pointInPolygon = function(numberOfVertices, xCoordinates, yCoordinates, testX, testY) {
+    var i, j;
+    var c = false;
+    for (i = 0, j = numberOfVertices - 1; i < numberOfVertices; j = i++) {
+        if ( ((yCoordinates[i] > testY) != (yCoordinates[j] > testY)) &&
+         (testX < (xCoordinates[j] - xCoordinates[i]) * (testY - yCoordinates[i]) / (yCoordinates[j] - yCoordinates[i]) + xCoordinates[i]) )
+           c = !c;
+      }
+      return c;
+        
+};
+
+function rotatePoint(pointX, pointY, originX, originY, angle) {
+    return [
+        Math.cos(angle) * (pointX-originX) - Math.sin(angle) * (pointY-originY) + originX,
+        Math.sin(angle) * (pointX-originX) + Math.cos(angle) * (pointY-originY) + originY
+    ];
+}
+
+            var init = function() {
+
+                var Polygon = function(p) {
+                    this.center = p.center;
+                    this.vertices = [
+                        [this.center[0] - (p.width / 2), this.center[1] - (p.height / 2)],
+                        [this.center[0] + (p.width / 2), this.center[1] - (p.height / 2)],
+                        [this.center[0] + (p.width / 2), this.center[1] + (p.height / 2)],
+                        [this.center[0] - (p.width / 2), this.center[1] + (p.height / 2)]
+                    ];
+
+                    this.getAxis = function(axis) {
+                        var i = 0;
+                        var output = [];
+                        for (i = 0; i < this.vertices.length; i++) {
+                            output.push(this.vertices[i][axis]);
+                        }
+                        return output;
+                    };
+
+                    this.rotate = function(theta) {
+                        var output = [];
+                        var i = 0;
+                        for (i = 0; i < this.vertices.length; i++) {  
+                            output[i] = rotatePoint(this.vertices[i][0], this.vertices[i][1], this.center[0], this.center[1], theta); 
+                        }
+                        this.vertices = output;
+                    };
+
+                    this.draw = function(ctx) { 
+                        var i = 0;
+                        for (i = 0; i < this.vertices.length; i++) {  
+                            ctx.beginPath();
+                            ctx.arc(
+                                this.vertices[i][0], 
+                                this.vertices[i][1], 
+                                5, 0, 2 * Math.PI, false);
+
+                            ctx.fillStyle = 'green';
+                            ctx.fill();
+                        }
+                        ctx.beginPath();
+                        ctx.arc(
+                            this.center[0], 
+                            this.center[1], 
+                            5, 0, 2 * Math.PI, false);
+
+                        ctx.fillStyle = 'blue';
+                        ctx.fill();
+
+                    };
+
+                    if (p.rotation) { 
+                        this.rotate(p.rotation);
+                    }
+
+                };
+
+
+                var animate = function() {
+                    (function animloop(){
+                        var i = 0;
+                        tick++
+                        if (tick > 25) { 
+                            tick = 0;
+                            canvas.width = canvas.width;
+                            square.rotate(Math.PI / 180);
+                            square.draw(ctx);
+                        }
+
+                        window.requestAnimationFrame(animloop);
+                    })();
+                };
+
+                var canvas = document.getElementById('canvas');
+                var ctx = canvas.getContext('2d');
+                var tick = 0;
+
+                var square = new Polygon({width: 100, height: 200, center: [325, 225], rotation: Math.PI/16});
+                
+                square.draw(ctx);
+                window.s = square;
+                //var polygon = new Polygon({vertices: [[300, 300], [50, 300], [300, 50]]});
+              
+                //animate();
+
+                canvas.onclick = function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    console.log(pointInPolygon(square.vertices.length, square.getAxis(0), square.getAxis(1), e.offsetX, e.offsetY));
+                };
+            };
+            
+            /*
+            (function() {
+                var s = 'first nest';
+                var g = function() {
+                    var s1 = 'second nest';
+                    window.nest = function() {
+                        console.log(s + ', ' + s1);
+                    };
+                };
+
+                var h = function() {
+                    var s2 = 'sibling nest';
+
+                };
+                g();
+
+            })();
+            */
+
+        </script>
+    </head>
+
+    <body onload="init()">
+        <div id="debug"> </div>
+        <canvas id="canvas" width="500" height="500" style="width: 500px; height: 500px">
+        You need a browser that supports the canvas element.
+        </canvas>
+
+    </body>
+</html>

@@ -1,0 +1,120 @@
+<!-- Javier, there are only two things you need to change to test different sprite sheets.
+I'll explain each in comments below -->
+
+
+<html>
+    <head>
+        <script>
+if (!window.requestAnimationFrame) {
+  window.requestAnimationFrame = (window.webkitRequestAnimationFrame ||
+                                  window.mozRequestAnimationFrame ||
+                                  window.msRequestAnimationFrame ||
+                                  window.oRequestAnimationFrame ||
+                                  function (callback) {
+                                    return window.setTimeout(callback, 17 /*~ 1000/60*/);
+                                  });
+}
+
+if (!window.cancelAnimationFrame) {
+  window.cancelAnimationFrame = (window.cancelRequestAnimationFrame ||
+                                 window.webkitCancelAnimationFrame || window.webkitCancelRequestAnimationFrame ||
+                                 window.mozCancelAnimationFrame || window.mozCancelRequestAnimationFrame ||
+                                 window.msCancelAnimationFrame || window.msCancelRequestAnimationFrame ||
+                                 window.oCancelAnimationFrame || window.oCancelRequestAnimationFrame ||
+                                 window.clearTimeout);
+}
+//Enclosing the module in a closure to avoid pollution of the global scope
+(function (exports) {
+
+  //Let's make each sprite an object, so that we have a reusable constructor
+  function Sprite(config) {
+
+    //A typical convention to not lose the context is to store it in another variable
+    var self = this;
+
+    //Setting a few configs for this object
+    this.canvas = document.getElementById(config.canvas);
+    this.context = this.canvas.getContext('2d');
+    this.path = config.path;
+    this.tiles = config.tiles;
+
+    //We can add properties to the Sprite instance, like states and counters
+    this.paused = false;
+    this.tick = 0;
+
+    //Let's load up the image when creating an instance
+    var image = this.image = new Image();
+    image.onload = function () {
+
+      //When loaded, get the info
+      self.width = image.width;
+      self.height = image.height;
+
+      //Start the animation via the instance's start method
+      self.animate();
+
+    }
+    image.src = this.path;
+  }
+
+  //Let's extend the constructor to have methods
+
+  //Unpauses the instance and runs animate
+  Sprite.prototype.play = function () {
+    this.paused = false;
+    this.animate();
+  }
+
+  //Our animation loop function
+  Sprite.prototype.animate = function () {
+
+    //If say the state is paused, don't request the next frame
+    //Otherwise, schedule the next frame
+    if(this.paused) return;
+    requestAnimationFrame(animate);
+
+    //clear and draw
+    this.canvas.width = this.canvas.width;
+    this.context.drawImage(this.image, this.tick * this.width, 0, this.width, this.height, 0, 0, this.width, this.height);
+
+    //reset it tiles reached
+    if(++this.tick > this.tiles) this.tiles = 0;
+
+  }
+
+  //This one stops the animation
+  Sprite.prototype.stop() {
+    this.paused = true;
+  }
+
+  exports.load = function (config) {
+    return new Sprite(config)
+  }
+
+}(this.Sprite = this.Sprite || {}));
+
+//Extensibility. Don't limit yourself to a fixed set of configurations.
+//Make your code reusable.
+var sprite = Sprite.load({
+  canvasId: 'canvas',
+  path: 'zombieChase3.png',
+  tiles: '5'
+});
+
+//you can control the sprite
+//sprite.play();
+//sprite.stop();
+       
+            };
+
+        </script>
+    </head>
+
+    <body onload="init()">
+
+        <canvas id="canvas" width="500" height="500">
+        You need a browser that supports the canvas element.
+        </canvas>
+
+    </body>
+</html>

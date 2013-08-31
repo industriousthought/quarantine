@@ -1,0 +1,300 @@
+
+
+<html>
+
+    <head>
+<script>
+    
+    function matrixMultiply(a,b) {
+        var a00=a[0*3+0];
+        var a01=a[0*3+1];
+        var a02=a[0*3+2];
+        var a10=a[1*3+0];
+        var a11=a[1*3+1];
+        var a12=a[1*3+2];
+        var a20=a[2*3+0];
+        var a21=a[2*3+1];
+        var a22=a[2*3+2];
+        var b00=b[0*3+0];
+        var b01=b[0*3+1];
+        var b02=b[0*3+2];
+        var b10=b[1*3+0];
+        var b11=b[1*3+1];
+        var b12=b[1*3+2];
+        var b20=b[2*3+0];
+        var b21=b[2*3+1];
+        var b22=b[2*3+2];
+        return [a00*b00+a01*b10+a02*b20,a00*b01+a01*b11+a02*b21,a00*b02+a01*b12+a02*b22,a10*b00+a11*b10+a12*b20,a10*b01+a11*b11+a12*b21,a10*b02+a11*b12+a12*b22,a20*b00+a21*b10+a22*b20,a20*b01+a21*b11+a22*b21,a20*b02+a21*b12+a22*b22];
+    }
+
+function makeTranslation(tx, ty) {
+  return [
+    1, 0, 0,
+    0, 1, 0,
+    tx, ty, 1
+  ];
+}
+
+function makeRotation(angleInRadians) {
+  var c = Math.cos(angleInRadians);
+  var s = Math.sin(angleInRadians);
+  return [
+    c,-s, 0,
+    s, c, 0,
+    0, 0, 1
+  ];
+}
+
+function makeScale(sx, sy) {
+  return [
+    sx, 0, 0,
+    0, sy, 0,
+    0, 0, 1
+  ];
+}
+    
+var loadProgram = function(gl, shaders, opt_attribs, opt_locations) {
+  var program = gl.createProgram();
+  for (var ii = 0; ii < shaders.length; ++ii) {
+    gl.attachShader(program, shaders[ii]);
+  }
+  if (opt_attribs) {
+    for (var ii = 0; ii < opt_attribs.length; ++ii) {
+      gl.bindAttribLocation(
+          program,
+          opt_locations ? opt_locations[ii] : ii,
+          opt_attribs[ii]);
+    }
+  }
+  gl.linkProgram(program);
+
+  // Check the link status
+  var linked = gl.getProgramParameter(program, gl.LINK_STATUS);
+  if (!linked) {
+      // something went wrong with the link
+      lastError = gl.getProgramInfoLog (program);
+      error("Error in program linking:" + lastError);
+
+      gl.deleteProgram(program);
+      return null;
+  }
+  return program;
+};
+    
+
+var error = function(msg) {
+  if (window.console) {
+    if (window.console.error) {
+      window.console.error(msg);
+    }
+    else if (window.console.log) {
+      window.console.log(msg);
+    }
+  }
+};
+    
+var createShaderFromScript = function (gl, scriptId, opt_shaderType, opt_errorCallback) {
+  var shaderSource = "";
+  var shaderType;
+  var shaderScript = document.getElementById(scriptId);
+  if (!shaderScript) {
+    throw("*** Error: unknown script element" + scriptId);
+  }
+  shaderSource = shaderScript.text;
+
+  if (!opt_shaderType) {
+    if (shaderScript.type == "x-shader/x-vertex") {
+      shaderType = gl.VERTEX_SHADER;
+    } else if (shaderScript.type == "x-shader/x-fragment") {
+      shaderType = gl.FRAGMENT_SHADER;
+    } else if (shaderType != gl.VERTEX_SHADER && shaderType != gl.FRAGMENT_SHADER) {
+      throw("*** Error: unknown shader type");
+      return null;
+    }
+  }
+
+  return loadShader(
+      gl, shaderSource, opt_shaderType ? opt_shaderType : shaderType,
+      opt_errorCallback);
+};
+
+var loadShader = function(gl, shaderSource, shaderType, opt_errorCallback) {
+  var errFn = opt_errorCallback || error;
+  // Create the shader object
+  var shader = gl.createShader(shaderType);
+
+  // Load the shader source
+  gl.shaderSource(shader, shaderSource);
+
+  // Compile the shader
+  gl.compileShader(shader);
+
+  // Check the compile status
+  var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+  if (!compiled) {
+    // Something went wrong during compilation; get the error
+    lastError = gl.getShaderInfoLog(shader);
+    errFn("*** Error compiling shader '" + shader + "':" + lastError);
+    gl.deleteShader(shader);
+    return null;
+  }
+
+  return shader;
+}
+</script>
+
+<script id="2d-vertex-shader" type="x-shader/x-vertex">
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+
+uniform vec2 u_resolution;
+uniform mat3 u_matrix;
+
+varying vec2 v_texCoord;
+
+void main() {
+
+// Multiply the position by the matrix.
+  vec2 position = (u_matrix * vec3(a_position, 1)).xy;
+
+  // convert the position from pixels to 0.0 to 1.0
+  vec2 zeroToOne = position / u_resolution;
+
+  // convert from 0->1 to 0->2
+  vec2 zeroToTwo = zeroToOne * 2.0;
+
+  // convert from 0->2 to -1->+1 (clipspace)
+  vec2 clipSpace = zeroToTwo - 1.0;
+
+  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+   v_texCoord = a_texCoord;
+}
+</script>
+
+<script id="2d-fragment-shader" type="x-shader/x-fragment">
+precision mediump float;
+
+// our texture
+uniform sampler2D u_image0;
+uniform sampler2D u_image1;
+uniform sampler2D u_image2;
+
+// the texCoords passed in from the vertex shader.
+varying vec2 v_texCoord;
+
+void main() {
+// Look up a color from the texture.
+vec4 textureColor = texture2D(u_image0, v_texCoord);
+  //if (textureColor.a < 0.5) 
+    //discard;
+  //else
+    gl_FragColor = vec4(textureColor.rgb, textureColor.a);
+
+//vec4 textureColor1 = texture2D(u_image1, v_texCoord);
+  //if (textureColor1.a < 0.5) 
+    //discard;
+  //else
+    //gl_FragColor = vec4(textureColor1.rgb, textureColor1.a);
+
+//vec4 textureColor2 = texture2D(u_image2, v_texCoord);
+  //if (textureColor2.a < 0.5) 
+    //discard;
+  //else
+    //gl_FragColor = vec4(textureColor2.rgb, textureColor2.a);
+
+}
+</script>
+    </head>
+
+    <body onload="" style="background: #0000FF">
+        <canvas id="display" style="width: 100%; height: 100%; top: 0px; left: 0px; position: absolute"> 
+
+        </canvas>
+
+        <script>
+
+var canvas = document.getElementById("display");
+canvas.setAttribute('width', window.innerWidth);
+canvas.setAttribute('height', window.innerHeight);
+var gl = canvas.getContext("experimental-webgl");
+
+var vertexShader = createShaderFromScript(gl, "2d-vertex-shader");
+var fragmentShader = createShaderFromScript(gl, "2d-fragment-shader");
+var program = loadProgram(gl, [vertexShader, fragmentShader]);
+gl.useProgram(program);
+
+// look up where the vertex data needs to go.
+var positionLocation = gl.getAttribLocation(program, "a_position");
+
+var translationLocation = gl.getUniformLocation(program, "u_translation");
+
+//Get rotation location
+var rotationLocation = gl.getUniformLocation(program, "u_rotation");
+
+// set the resolution
+var resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+
+
+  texture = gl.createTexture();
+  image = new Image();
+  image.onload = function() { handleTextureLoaded(image, texture); }
+  image.src = 'temp.png';
+ 
+function handleTextureLoaded(image, texture) {
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+}
+
+
+vertexBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
+var xMin = 0;
+var xMax = 100;
+var yMin = 0;
+var yMax = 100;
+
+
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    xMin, yMax,
+    xMax, yMax,
+    xMin, yMin,
+    xMin, yMin,
+    xMax, yMax,
+    xMax, yMin]), gl.STATIC_DRAW);
+gl.enableVertexAttribArray(positionLocation);
+gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+texCoordLocation = gl.getAttribLocation(program, 'a_texCoord');
+
+texCoordBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    0,  1,
+    1,  1,
+    0,  0,
+    0,  0,
+    1,  1,
+    1,  0]), gl.STATIC_DRAW);
+gl.enableVertexAttribArray(texCoordLocation);
+gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+
+
+gl.bindTexture(gl.TEXTURE_2D, texture);
+
+gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+
+        </script>
+
+    </body>
+
+</html>
+
+

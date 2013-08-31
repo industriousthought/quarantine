@@ -1,0 +1,297 @@
+<html>
+
+    <head>
+
+
+    
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1">
+
+        <link rel="stylesheet" type="text/css" href="./css/reset.css" />
+        <link rel="stylesheet" type="text/css" href="./css/controllerStyle.css" />
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    var socket = io.connect('192.168.0.12');
+    socket.on('youAre', function (data) {
+    });
+    socket.on('deadPlayer', function (data) {
+        if (window.id == data.id) {
+            alive = null;
+            document.getElementById('controlPanel').style.visibility = 'hidden';
+            document.getElementById('dead').onclick = function() {
+                document.getElementById('controlPanel').style.visibility = 'hidden';
+                document.getElementById('dead').style.visibility = 'visible';
+                socket.emit('newPlayer', {
+                    id: window.id
+                });
+                start();
+            };
+            document.getElementById('dead').style.visibility = 'visible';
+
+            console.log(window.id + ', ' + data.id);
+        }
+    });
+
+
+    socket.on('ping', function (data) {
+        socket.emit('pingBack', {
+            id: id
+        });
+    });
+        
+</script>
+
+    </head>
+
+
+    <body onload="init();">
+        <div id="msg"><br/></div>
+
+        <div id="returningPlayer" class="fullScreen">
+            <h1> Welcome Back</h1> 
+            
+            <div id="returnPlayerStart" class="button">
+                Start
+            </div>
+
+        </div>
+
+        <div id="firstTime" class="fullScreen">
+            <h1> Quarantine!</h1> 
+            
+            Enter you player name: <input type="text" id="nick"><br>
+            <div id="newPlayer" class="button">
+                Submit
+            </div>
+        </div>
+
+        <div id="dead" class="fullScreen">
+            <h1>You Died!</h1>
+
+            <div id="restart" class="button">
+                Do over?
+            </div>
+
+
+        </div>
+
+        <div id="controlPanel" class="fullScreen">
+            <br/>
+
+        </div>
+
+        <script>
+
+    if (!window.requestAnimationFrame) {
+      window.requestAnimationFrame = (window.webkitRequestAnimationFrame ||
+                                      window.mozRequestAnimationFrame ||
+                                      window.msRequestAnimationFrame ||
+                                      window.oRequestAnimationFrame ||
+                                      function (callback) {
+                                        return window.setTimeout(callback, 17 /*~ 1000/60*/);
+                                      });
+    }
+
+    if (!window.cancelAnimationFrame) {
+      window.cancelAnimationFrame = (window.cancelRequestAnimationFrame ||
+                                     window.webkitCancelAnimationFrame || window.webkitCancelRequestAnimationFrame ||
+                                     window.mozCancelAnimationFrame || window.mozCancelRequestAnimationFrame ||
+                                     window.msCancelAnimationFrame || window.msCancelRequestAnimationFrame ||
+                                     window.oCancelAnimationFrame || window.oCancelRequestAnimationFrame ||
+                                     window.clearTimeout);
+    }
+
+    var touches = [];
+    var controllers = [];
+    var alive = null;
+
+    var id = new Date().getTime();
+    
+    document.cookie = id;
+
+    var init = function() {
+
+        window.start = function() {
+
+            document.getElementById('controlPanel').style.visibility = 'visible';
+
+            var leftJoystick = new Controller({id: 'leftJoystick', bottom: 20, left: 20, width: 200, height: 200});
+            var rightJoystick = new Controller({id: 'rightJoystick', bottom: 20, right: 20, width: 200, height: 200});
+
+            alive = true;
+
+            (function animloop(){
+                var now = new Date();
+
+                if (alive) {
+                    window.requestAnimationFrame(animloop);
+                }
+                if (leftJoystick.controlling) { 
+                    leftJoystick.iterate();
+                };
+                if (rightJoystick.controlling) { 
+                    rightJoystick.iterate();
+                };
+            })();
+
+        };
+
+
+        if (document.cookie) { 
+            document.getElementById('returningPlayer').style.visibility = 'visible';
+            document.getElementById('returnPlayerStart').onclick = function() {
+                document.getElementById('returningPlayer').style.visibility = 'hidden';
+                socket.emit('newPlayer', {
+                    id: id
+                });
+                start();
+            };
+        } else {
+
+            document.getElementById('firstTime').style.visibility = 'visible';
+            document.getElementById('newPlayer').onclick = function() {
+                var nick = document.getElementById('nick').value;
+                document.getElementById('firstTime').style.visibility = 'hidden';
+                socket.emit('newPlayer', {
+                    id: id
+                });
+                start();
+            };
+        }
+    };
+
+    var newTouch = function(e) {
+        e.preventDefault();
+        var fn = null;
+        for (var i=0; i <  e.changedTouches.length; i++) {
+            if (!controllers[e.changedTouches[i].target.getAttribute('data-controller')].controlling) {
+                console.log(controllers[e.changedTouches[i].target.getAttribute('data-controller')].sensor);
+                controllers[e.changedTouches[i].target.getAttribute('data-controller')].controllerStart(e.changedTouches[i]);
+
+                touches[e.changedTouches[i].identifier] = controllers[e.changedTouches[i].target.getAttribute('data-controller')];
+
+            } 
+        }
+    };
+
+    var stopTouch = function(e) {
+        e.preventDefault();
+        var t = {};
+
+        for (var i=0; i <  e.changedTouches.length; i++) {
+            t = touches[e.changedTouches[i].identifier];
+            t.controllerStop();
+            touches[e.changedTouches[i].identifier];
+        }
+
+    };
+
+    var moveTouch = function(e) {
+        e.preventDefault();
+        var t = {};
+
+        for (var i=0; i <  e.changedTouches.length; i++) {
+            t = touches[e.changedTouches[i].identifier];
+            t.controllerMove({x: e.changedTouches[i].pageX, y: e.changedTouches[i].pageY});
+        }
+
+    };
+
+
+    var Controller = function(p) {
+
+        controllers[p.id] = this;
+
+        this.id = p.id;
+        this.sensor = document.createElement('div');
+        this.sensor.className = 'sensor';
+        this.sensor.style.top = p.top + 'px' || null;
+        this.sensor.style.left = p.left + 'px' || null;
+        this.sensor.style.bottom = p.bottom + 'px' || null;
+        this.sensor.style.right = p.right + 'px' || null;
+        this.sensor.style.width = p.width + 'px' || null;
+        this.sensor.style.height = p.height + 'px' || null;
+        this.sensor.setAttribute('data-controller', this.id);
+        document.getElementById('controlPanel').appendChild(this.sensor);
+
+        this.sensor.addEventListener('touchstart', newTouch, false);
+        this.sensor.addEventListener('touchmove', moveTouch, false);
+        this.sensor.addEventListener('touchend', stopTouch, false);
+
+
+        this.img = new Image();
+        this.img.src = 'joystick.png';
+        this.img.className = 'joystick';
+        this.sensor.appendChild(this.img);
+
+        this.controlling = null;
+
+        this.drawControl = function() {
+            if (this.controlling) {
+            }
+
+        };
+
+        this.controllerStart = function(e) {
+            var offset = getOffset(this.sensor);
+            this.controlling = {
+                id: e.identifier,
+                originX: e.pageX,
+                originY: e.pageY,
+                currentX: e.pageX,
+                currentY: e.pageY
+            };
+            this.img.style.visibility = 'visible';
+            this.img.style.left = (e.pageX - offset.left - 55) + 'px'; 
+            this.img.style.top = (e.pageY - offset.top - 55) + 'px';
+
+        };
+        
+        this.controllerStop = function(e) {
+            this.controlling = null;
+            this.img.style.visibility = 'hidden';
+            socket.emit('event', { 
+                x: null,
+                y: null,
+                controller: this.id,
+                id: window.id
+            });
+        };
+
+        this.iterate = function() {
+            var distanceX = 0;
+            distanceX = (this.controlling.originX - this.controlling.currentX) / 50;
+            var distanceY = 0;
+            distanceY = (this.controlling.originY - this.controlling.currentY) / 50;
+            socket.emit('event', {
+                x: distanceX,
+                y: distanceY,
+                controller: this.id,
+                id: window.id
+            });
+        };
+
+        this.controllerMove = function(e) {
+            this.controlling.currentX = e.x;
+            this.controlling.currentY = e.y;
+        };
+
+
+    };
+
+    function getOffset( el ) {
+        var _x = 0;
+        var _y = 0;
+        while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
+            _x += el.offsetLeft - el.scrollLeft;
+            _y += el.offsetTop - el.scrollTop;
+            el = el.offsetParent;
+        }
+        return { top: _y, left: _x };
+    }
+        
+        </script>
+    </body>
+
+</html>
+
