@@ -8,96 +8,6 @@ app.get('/', function(req, res) {
   res.sendfile(__dirname + '/splash.html');
 });
 
-var games = [];
-var lobbies = [];
-
-var makeGame = function(p) {
-
-    var game = {};
-    game.id = p.id;
-    game.players = [];
-    game.lastPlayer = 0;
-    
-    lobbies[game.id] = io.of('/lobby' + game.id).on('connection', function (socket) {
-
-        for (var p in game.players) {
-            lobbies[game.id].emit('newPlayer', {
-                'id': p
-            });
-
-        }
-        socket.on('cancleLobby', function (data) {
-            delete lobbies[game.id];
-            delete games[game.id];
-
-        });
-    });
-    game.controller = io.of('/con' + game.id).on('connection', function (socket) {
-
-        socket.on('event', function (data) {
-            
-            game.display.emit('event', {
-                'x': data.x,
-                'y': data.y,
-                'controller': data.controller,
-                'id': data.id
-
-          });
-        });
-
-        socket.on('newPlayer', function (data) {
-            lobbies[game.id].emit('newPlayer', {
-                'id': data.id 
-            });
-            game.players[data.id] = {'name': 'nick'};
-
-        });
-
-        
-
-    });
-            
-    game.display = io.of('/dis' + game.id).on('connection', function (socket) {
-
-        console.log('display connected!');
-
-        for (var p in game.players) {
-            game.display.emit('event', {
-                'newPlayer': p
-            });
-        }
-
-        socket.on('deadPlayer', function (data) {
-            game.players[data.id].living = null;
-            game.controller.emit('deadPlayer', {
-                'id': data.id
-
-        });
-
-
-    });
-});
- 
-
-}
-
-app.get('/newGame', function(req, res) {
-    var gameID = "";
-    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-    for( var i=0; i < 5; i++ )
-        gameID += possible.charAt(Math.floor(Math.random() * possible.length));
-
-    res.send(gameID);
-
-
-    games[gameID] = makeGame({id: gameID});
-});
-
-app.get('/img/cancle.gif', function(req, res) {
-  res.sendfile(__dirname + '/img/cancle.gif');
-});
-
 app.get('/img/gas_mask.gif', function(req, res) {
   res.sendfile(__dirname + '/img/gas_mask.gif');
 });
@@ -201,6 +111,116 @@ io.sockets.on('connection', function (socket) {
   });
 });
 
+var lastPlayer = 0;
+var players = [];
+var display = null;
+
+var con = io.of('/con').on('connection', function (socket) {
+    socket.on('event', function (data) {
+        
+        dis.emit('event', {
+            'x': data.x,
+            'y': data.y,
+            'controller': data.controller,
+            'id': data.id
+
+      });
+    });
+
+    socket.on('pingBack', function(data) {
+        if (players[data.id]) {
+            players[data.id].outstandingPing = null;
+        }
+
+    });
+    
+    socket.on('newPlayer', function (data) {
+        var newPlayer = {};
+        
+        if (data.id && players[data.id]) {
+            newPlayer = players[data.id];
+            players[data.id].alive = true;
+        } else {
+            newPlayer.id = data.id;
+            newPlayer.nick = data.nick;
+            newPlayer.alive = true;
+            players[newPlayer.id] = newPlayer;
+        }
+        
+        console.log(data.id + ', ' + newPlayer.id);
+
+        dis.emit('event', {
+            'newPlayer': newPlayer.id,
+            'nick': newPlayer.nick
+        });
+
+        lastPlayer++;
+
+    });
 
 
+    console.log('new controller');
+  });
 
+var dis= io.of('/dis').on('connection', function (socket) {
+
+    display = {};
+
+    socket.on('deadPlayer', function (data) {
+        players[data.id].living = null;
+        con.emit('deadPlayer', {
+            'id': data.id
+        });
+
+    });
+
+    socket.on('pingBack', function(data) {
+        display.outstandingPing = null;
+
+    });
+    
+});
+ 
+var pingSendInterval = setInterval(function() {
+    var pingId = new Date().getTime();
+    var i = 0;
+    for (i in players) {
+        players[i].outstandingPing = pingId;
+    }
+    if (display) {
+        display.outstandingPing = pingId;
+    }
+
+    dis.emit('ping', {
+        time: pingId
+    });
+
+    con.emit('ping', {
+        time: pingId
+    });
+
+}, 1000);
+
+var pingCheckInterval = setInterval(function() {
+    var now = new Date().getTime();
+    var elapsedTime = 0;
+    for (i in players) {
+        if (players[i].outstandingPing) {
+            elapsedTime = now - players[i].outstandingPing;
+            if (elapsedTime > 500) {
+                console.log('player ID: ' + i + ' is experienceing latency of ' + elapsedTime + '.');
+            }
+            players[i].outstandingPing = null;
+        }
+    }
+
+    if (display && display.outstandingPing) {
+        elapsedTime = now - display.outstandingPing;
+        if (elapsedTime > 500) {
+            console.log('Display is experienceing latency of ' + elapsedTime + '.');
+            display.outstandingPing = null;
+        }
+    }
+
+            
+}, 50);

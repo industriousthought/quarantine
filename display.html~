@@ -5,8 +5,14 @@
 
 
         <link rel="stylesheet" type="text/css" href="./css/reset.css" />
+        <script src="./js/mathTools.js">
+
+        </script>
     
 
+        <script src="./js/animationEffects.js">
+
+        </script>
 
         <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -168,7 +174,35 @@ if (!window.cancelAnimationFrame) {
 }
 
 
-var socket = io.connect('http://localhost/dis');
+function getUrlParameters(parameter, staticURL, decode){
+   /*
+    Function: getUrlParameters
+    Description: Get the value of URL parameters either from 
+                 current URL or static URL
+    Author: Tirumal
+    URL: www.code-tricks.com
+   */
+   var currLocation = (staticURL.length)? staticURL : window.location.search,
+       parArr = currLocation.split("?")[1].split("&"),
+       returnBool = true;
+   
+   for(var i = 0; i < parArr.length; i++){
+        parr = parArr[i].split("=");
+        if(parr[0] == parameter){
+            return (decode) ? decodeURIComponent(parr[1]) : parr[1];
+            returnBool = true;
+        }else{
+            returnBool = false;            
+        }
+   }
+   
+   if(!returnBool) return false;  
+}
+
+var gameID = getUrlParameters('id', '', true);
+console.log(gameID);
+
+var socket = io.connect(window.location.protocol + "//" + window.location.host + '/dis' + gameID);
 
 socket.on('ping', function (data) {
     socket.emit('pingBack', {
@@ -498,6 +532,9 @@ vec4 textureColor = texture2D(u_image0, v_texCoord);
         </canvas>
         <canvas id="overlay" width="1200" height="750" style="z-index: 2; width: 100%; height: 100%; top: 0px; left: 0px; position: absolute"> 
         </canvas>
+        <div id="1number" style="font-size:300px; position: absolute; top: 200px; left: 200px; opacity: 0">1</div>
+        <div id="2number" style="font-size:300px; position: absolute; top: 200px; left: 200px; opacity: 0">2</div>
+        <div id="3number" style="font-size:300px; position: absolute; top: 200px; left: 200px; opacity: 0">3</div>
 
         <div id="debug" style="position: absolute; top: 0px; right: 0px; width: 100px; height 300px; z-index: 2"> <br/> </div>
 
@@ -1075,7 +1112,7 @@ var init = function() {
     globalObj.running = true;
 
     newCar({id: 'car0', type: '1', x: 300, y: 250, rotation: Math.PI / 4});
-    newCar({id: 'car1', type: '2', x: 800, y: 300, rotation: Math.PI / .75});
+    newCar({id: 'car1', type: '2', x: 800, y: 200, rotation: Math.PI / .75});
     newCar({id: 'car2', type: '3', x: 200, y: 500, rotation: Math.PI / 1.75});
     newField({id: 'wall1', x: 0, y: 470, width: 50, height: 640, rotation: Math.PI});
     newField({id: 'wall2', x: 90, y: 750, width: 160, height: 50, rotation: Math.PI});
@@ -1093,18 +1130,53 @@ var init = function() {
 };
 
 var main = function() {
-    (function animloop(){
-        var playerCount = eventLoop();
-        if (playerCount > 0) {
-            window.requestAnimationFrame(animloop);
-        } else {
-            reset();    
-        }
+    (function(){
+        var i = 0;
+        var fadeOutNumber;
+        var f = function( ){
+            if (i < 5 && i > 0) {
+                AnimationManager.addAnimation(fadeOutNumber);
+                    console.log(fadeOutNumber);
+            }
+            i++;
+            if (i < 4) {
+                var img = document.getElementById(i + 'number');
+                
+                var fadeInNumber = new AnimationEvent({
+                    properties: {
+                        opacity: {
+                            start: 0,
+                            stop: 1,
+                            suffix: '',
+                            curve: CURVES.compose(CURVES.forwardSlope, CURVES.rearSlope)
+
+                        }
+                    },
+                    length: 500,
+                    object: img
+                });
+                AnimationManager.addAnimation(fadeInNumber.add);
+                fadeOutNumber = fadeInNumber.remove;
+                window.setInterval(f,2000);
+            }
+            if (i == 5) {
+
+                (function animloop(){
+                    var playerCount = eventLoop();
+                    if (playerCount > 0) {
+                        window.requestAnimationFrame(animloop);
+                    } else {
+                        reset();    
+                    }
+                })();
+            }
+        };
+        f();
     })();
 };
 
 var reset = function() {
-    init();
+    window.location.assign(window.location.protocol + "//" + window.location.host + '?id=' + gameID)
 }
 
 initTextures();

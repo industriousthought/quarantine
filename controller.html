@@ -1,5 +1,6 @@
 <html>
 
+
     <head>
 
 
@@ -9,9 +10,68 @@
         <link rel="stylesheet" type="text/css" href="./css/reset.css" />
         <link rel="stylesheet" type="text/css" href="./css/controllerStyle.css" />
 
+<script src="./js/animationEffects.js">
+
+</script>
+<script src="./js/mathTools.js">
+
+</script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    var socket = io.connect(window.location.protocol + "//" + window.location.host + '/con');
+    var closeCurrentSlide = false;
+    var changeSlide = function(slide) {
+        if (closeCurrentSlide) {
+            AnimationManager.addAnimation(closeCurrentSlide);
+        }
+
+        var slide = new AnimationEvent({
+            properties: {
+                opacity: {
+                    start: 0,
+                    stop: 1,
+                    suffix: '',
+                    curve: CURVES.rearSlope
+
+                },
+                zIndex: {
+                    start: 0,
+                    stop: 1,
+                    suffix: '',
+                    curve: CURVES.step
+
+                }
+            },
+            length: 1000,
+            object: document.getElementById(slide)
+        });
+        AnimationManager.addAnimation(slide.add);
+
+        closeCurrentSlide = slide.remove;
+        
+    };
+
+
+function getUrlParameters(parameter, staticURL, decode){
+   var currLocation = (staticURL.length)? staticURL : window.location.search,
+       parArr = currLocation.split("?")[1].split("&"),
+       returnBool = true;
+   
+   for(var i = 0; i < parArr.length; i++){
+        parr = parArr[i].split("=");
+        if(parr[0] == parameter){
+            return (decode) ? decodeURIComponent(parr[1]) : parr[1];
+            returnBool = true;
+        }else{
+            returnBool = false;            
+        }
+   }
+   
+   if(!returnBool) return false;  
+}
+
+var gameID = getUrlParameters('id', '', true);
+
+    var socket = io.connect(window.location.protocol + "//" + window.location.host + '/con' + gameID);
     socket.on('youAre', function (data) {
     });
     socket.on('deadPlayer', function (data) {
@@ -20,13 +80,13 @@
             document.getElementById('controlPanel').style.visibility = 'hidden';
             document.getElementById('dead').onclick = function() {
                 document.getElementById('controlPanel').style.visibility = 'hidden';
-                document.getElementById('dead').style.visibility = 'visible';
+                changeSlide('dead');
                 socket.emit('newPlayer', {
                     id: window.id
                 });
                 start();
             };
-            document.getElementById('dead').style.visibility = 'visible';
+            changeSlide('dead');
 
             console.log(window.id + ', ' + data.id);
         }
@@ -38,6 +98,19 @@
             id: id
         });
     });
+
+    var togglePause = function() {
+        console.log('pause pressed');
+        socket.emit('pause', {
+            id: id
+        });
+        
+    };
+
+    var reset = function() {
+        document.cookie = null;
+        firstTime();
+    };
         
 </script>
 
@@ -45,40 +118,46 @@
 
 
     <body onload="init();">
+
+        <div id="pause" onclick="togglePause();" class="button">Pause</div>
+        <div id="reset" onclick="reset();" class="button">reset</div>
         <div id="msg"><br/></div>
 
-        <div id="returningPlayer" class="fullScreen">
-            <h1> Welcome Back</h1> 
-            
-            <div id="returnPlayerStart" class="button">
-                Start
-            </div>
+        <ul id="slides">
+            <li id="returnPlayer" class="fullScreen">
+                <h1 id="welcome">Welcome Back</h1> 
+                
+                <div id="returnPlayerStart" class="button">
+                    Start
+                </div>
 
-        </div>
+            </li>
 
-        <div id="firstTime" class="fullScreen">
-            <h1> Quarantine!</h1> 
-            
-            Enter you player name: <input type="text" id="nick"><br>
-            <div id="newPlayer" class="button">
-                Submit
-            </div>
-        </div>
+            <li id="firstTime" class="fullScreen">
+                <h1> Quarantine!</h1> 
+                
+                Enter you player name: <input type="text" id="nick"><br>
+                <div id="newPlayer" class="button">
+                    Submit
+                </div>
+            </li>
 
-        <div id="dead" class="fullScreen">
-            <h1>You Died!</h1>
+            <li id="dead" class="fullScreen">
+                <h1>You Died!</h1>
 
-            <div id="restart" class="button">
-                Do over?
-            </div>
+                <div id="restart" class="button">
+                    Do over?
+                </div>
 
 
-        </div>
+            </li>
 
-        <div id="controlPanel" class="fullScreen">
-            <br/>
+            <li id="controlPanel" class="fullScreen">
+                <br/>
 
-        </div>
+            </li>
+        </ul>
+
 
         <script>
 
@@ -106,17 +185,32 @@
     var alive = null;
 
     var id = new Date().getTime();
-    
-    document.cookie = id;
 
+    var firstTime = function() {
+
+        changeSlide('firstTime');
+        document.getElementById('newPlayer').onclick = function() {
+            var nick = document.getElementById('nick').value;
+            document.cookie = id;
+            document.getElementById('firstTime').style.visibility = 'hidden';
+            socket.emit('newPlayer', {
+                id: document.cookie,
+                nick: nick
+            });
+            start();
+        };
+    };
+    
     var init = function() {
 
         window.start = function() {
 
-            document.getElementById('controlPanel').style.visibility = 'visible';
+            changeSlide('controlPanel');
 
-            var leftJoystick = new Controller({id: 'leftJoystick', bottom: 20, left: 20, width: 200, height: 200});
-            var rightJoystick = new Controller({id: 'rightJoystick', bottom: 20, right: 20, width: 200, height: 200});
+            var height = window.innerHeight / 1.35;
+            var width = window.innerWidth / 2.25;
+            var leftJoystick = new Controller({id: 'leftJoystick', bottom: 20, left: 20, width: width, height: height});
+            var rightJoystick = new Controller({id: 'rightJoystick', bottom: 20, right: 20, width: width, height: height});
 
             alive = true;
 
@@ -138,26 +232,34 @@
 
 
         if (document.cookie) { 
-            document.getElementById('returningPlayer').style.visibility = 'visible';
-            document.getElementById('returnPlayerStart').onclick = function() {
-                document.getElementById('returningPlayer').style.visibility = 'hidden';
-                socket.emit('newPlayer', {
-                    id: id
-                });
-                start();
-            };
-        } else {
+            socket.emit('checkPlayer', {
+                id: document.cookie
+            });
+            socket.on('idExists', function(data) {
+                if (data.id == document.cookie) {
+                    document.getElementById('welcome').innerHTML += ' ' + data.nick;
+                    socket.on('idExists', null);
+                    changeSlide('returnPlayer');
+                    document.getElementById('returnPlayerStart').onclick = function() {
+                        socket.emit('newPlayer', {
+                            id: document.cookie
+                        });
+                        start();
+                    };
+                } else {
 
-            document.getElementById('firstTime').style.visibility = 'visible';
-            document.getElementById('newPlayer').onclick = function() {
-                var nick = document.getElementById('nick').value;
-                document.getElementById('firstTime').style.visibility = 'hidden';
-                socket.emit('newPlayer', {
-                    id: id
-                });
-                start();
-            };
+                }
+
+            });
+            socket.on('idNotExist', function(data) {
+                socket.on('idNotExist', null);
+                firstTime();
+            });
+                
+        } else {
+            firstTime();
         }
+
     };
 
     var newTouch = function(e) {

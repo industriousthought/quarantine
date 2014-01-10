@@ -9,9 +9,41 @@
         <link rel="stylesheet" type="text/css" href="./css/reset.css" />
         <link rel="stylesheet" type="text/css" href="./css/controllerStyle.css" />
 
+<script src="./js/animationEffects.js">
+
+</script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    var socket = io.connect('192.168.0.12');
+
+function getUrlParameters(parameter, staticURL, decode){
+   /*
+    Function: getUrlParameters
+    Description: Get the value of URL parameters either from 
+                 current URL or static URL
+    Author: Tirumal
+    URL: www.code-tricks.com
+   */
+   var currLocation = (staticURL.length)? staticURL : window.location.search,
+       parArr = currLocation.split("?")[1].split("&"),
+       returnBool = true;
+   
+   for(var i = 0; i < parArr.length; i++){
+        parr = parArr[i].split("=");
+        if(parr[0] == parameter){
+            return (decode) ? decodeURIComponent(parr[1]) : parr[1];
+            returnBool = true;
+        }else{
+            returnBool = false;            
+        }
+   }
+   
+   if(!returnBool) return false;  
+}
+
+var gameID = getUrlParameters('id', '', true);
+
+console.log(gameID);
+    var socket = io.connect(window.location.protocol + "//" + window.location.host + '/con' + gameID);
     socket.on('youAre', function (data) {
     });
     socket.on('deadPlayer', function (data) {
@@ -107,16 +139,15 @@
 
     var id = new Date().getTime();
     
-    document.cookie = id;
-
     var init = function() {
 
         window.start = function() {
 
             document.getElementById('controlPanel').style.visibility = 'visible';
 
-            var leftJoystick = new Controller({id: 'leftJoystick', bottom: 20, left: 20, width: 200, height: 200});
-            var rightJoystick = new Controller({id: 'rightJoystick', bottom: 20, right: 20, width: 200, height: 200});
+            var width = window.innerHeight / 1.35;
+            var leftJoystick = new Controller({id: 'leftJoystick', bottom: 20, left: 20, width: width, height: width});
+            var rightJoystick = new Controller({id: 'rightJoystick', bottom: 20, right: 20, width: width, height: width});
 
             alive = true;
 
@@ -138,11 +169,12 @@
 
 
         if (document.cookie) { 
+            console.log(document.cookie);
             document.getElementById('returningPlayer').style.visibility = 'visible';
             document.getElementById('returnPlayerStart').onclick = function() {
                 document.getElementById('returningPlayer').style.visibility = 'hidden';
                 socket.emit('newPlayer', {
-                    id: id
+                    id: document.cookie
                 });
                 start();
             };
@@ -151,9 +183,11 @@
             document.getElementById('firstTime').style.visibility = 'visible';
             document.getElementById('newPlayer').onclick = function() {
                 var nick = document.getElementById('nick').value;
+                document.cookie = id;
                 document.getElementById('firstTime').style.visibility = 'hidden';
                 socket.emit('newPlayer', {
-                    id: id
+                    id: document.cookie,
+                    nick: nick
                 });
                 start();
             };

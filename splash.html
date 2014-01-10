@@ -1,0 +1,284 @@
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="./css/splashStyle.css" />
+        <title>Quarantine</title>
+    </head>
+
+    <script src="./js/animationEffects.js">
+
+    </script>
+    <script src="./js/mathTools.js">
+
+    </script>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        function getUrlParameters(parameter, staticURL, decode){
+           /*
+            Function: getUrlParameters
+            Description: Get the value of URL parameters either from 
+                         current URL or static URL
+            Author: Tirumal
+            URL: www.code-tricks.com
+           */
+           var currLocation = (staticURL.length)? staticURL : window.location.search;
+           if (!currLocation) { 
+               return null;
+           }
+           var parArr = currLocation.split("?")[1].split("&"),
+               returnBool = true;
+           
+           for(var i = 0; i < parArr.length; i++){
+                parr = parArr[i].split("=");
+                if(parr[0] == parameter){
+                    return (decode) ? decodeURIComponent(parr[1]) : parr[1];
+                    returnBool = true;
+                }else{
+                    returnBool = false;            
+                }
+           }
+           
+           if(!returnBool) return false;  
+        }
+
+        var gameID = getUrlParameters('id', '', true);
+        var closeCurrentSlide = null;
+        var lobbySocket = null;
+
+        var changeSlide = function(slide) {
+            if (closeCurrentSlide) {
+                AnimationManager.addAnimation(closeCurrentSlide);
+            }
+
+            var slide = new AnimationEvent({
+                properties: {
+                    opacity: {
+                        start: 0,
+                        stop: 1,
+                        suffix: '',
+                        curve: CURVES.rearSlope
+
+                    },
+                    zIndex: {
+                        start: 0,
+                        stop: 1,
+                        suffix: '',
+                        curve: CURVES.step
+
+                    }
+                },
+                length: 1000,
+                object: document.getElementById(slide)
+            });
+            AnimationManager.addAnimation(slide.add);
+
+            closeCurrentSlide = slide.remove;
+            
+        };
+
+        var setSplashImgs = function() {
+            var splash = document.getElementById('splashImg');
+            var buttons = document.getElementsByClassName('button');
+            var lobbieSlide = document.getElementById('newGame');
+
+            var mouseOver = function() {
+                var buttonFade = new AnimationEvent({
+                    properties: {
+                        opacity: {
+                            start: .5,
+                            stop: 1,
+                            suffix: '',
+                            curve: CURVES.rearSlope
+
+                        }
+                    },
+                    length: 250,
+                    object: this
+                });
+                AnimationManager.addAnimation(buttonFade.add);
+
+                this.onmouseout = function() {
+                    AnimationManager.addAnimation(buttonFade.remove);
+
+                }
+
+
+            };
+            splash.style.width = window.innerWidth;
+            splash.style.top = (window.innerHeight - splash.offsetHeight) / 2;
+            splash.style.left = "0px";
+            for (var i = 0; i < buttons.length; i++) {
+                if (buttons[i].parentNode == document.getElementById('splash')) {
+                    buttons[i].style.height = splash.offsetHeight / 6;
+                    buttons[i].style.top = parseInt(splash.style.top) + ((splash.offsetHeight / 5) * (i + 1.75));
+                    buttons[i].style.left = (window.innerWidth / 2) - (buttons[i].offsetWidth / 2);
+                }
+                buttons[i].onmouseover = mouseOver;
+            }
+
+            lobbieSlide.style.top = parseInt(splash.style.top) + ((splash.offsetHeight / 5) * (1.75));
+
+            var bgFade = new AnimationEvent({
+                properties: {
+                    opacity: {
+                        start: 0,
+                        stop: 1,
+                        suffix: '',
+                        curve: CURVES.rearSlope
+
+                    }
+                },
+                length: 500,
+                object: document.getElementById('splashImg')
+            });
+            AnimationManager.addAnimation(bgFade.add);
+        };
+
+        var newGame = function() {
+            if (gameID) {
+                restoreGame();
+            } else {
+                var xmlhttp = new XMLHttpRequest();
+                xmlhttp.onreadystatechange = function() {
+                    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                         gameID = xmlhttp.responseText;
+
+                         document.getElementById('controllerURL').innerHTML = 'localhost/controller?id=' + gameID;
+
+                         var myNode = document.getElementById("playersList");
+                         while (myNode.firstChild) {
+                             myNode.removeChild(myNode.firstChild);
+                         }
+                         changeSlide('newGame');
+
+                         if (lobbySocket) {
+                            lobbySocket.disconnect();
+                         }
+                         lobbySocket = io.connect(window.location.protocol + "//" + window.location.host + '/lobby' + gameID);
+
+                         lobbySocket.on('newPlayer', function (data) {
+
+                             newPlayer(data.nick);
+
+                         });
+
+                    }
+                }
+                xmlhttp.open('GET', '/newGame', true);
+                xmlhttp.send();
+            };
+        };
+
+        restoreGame = function() {
+
+             document.getElementById('controllerURL').innerHTML = 'localhost/controller?id=' + gameID;
+
+             var myNode = document.getElementById("playersList");
+             while (myNode.firstChild) {
+                 myNode.removeChild(myNode.firstChild);
+             }
+             changeSlide('newGame');
+
+             lobbySocket = io.connect(window.location.protocol + "//" + window.location.host + '/lobby' + gameID);
+
+             lobbySocket.on('newPlayer', function (data) {
+
+                 newPlayer(data.nick);
+
+             });
+
+
+        };
+
+        var newPlayer = function(id) {
+            document.getElementById('startButton').innerHTML = 'Start';
+            var listItem = document.createElement('li');
+            listItem.innerHTML = id;
+            document.getElementById('playersList').appendChild(listItem);
+            var fadeInName = new AnimationEvent({
+                properties: {
+                    opacity: {
+                        start: 0,
+                        stop: 1,
+                        suffix: '',
+                        curve: CURVES.rearSlope
+
+                    }
+                },
+                length: 250,
+                object: listItem
+            });
+            AnimationManager.addAnimation(fadeInName.add);
+
+        };
+
+        var cancleLobby = function() {
+            gameID = null;
+            lobbySocket.emit('cancleLobby', {
+                'cancle': 'true'
+            });
+            changeSlide('splash');
+        };
+
+        var startGame = function() {
+            lobbySocket.emit('startGame', {
+                'game': 'start'
+            });
+            window.location.assign(window.location.protocol + "//" + window.location.host + '/display?id=' + gameID)
+
+        };
+
+        var init = function() {
+            setSplashImgs();
+
+            if (gameID) {
+                newGame();
+
+            } else {
+                changeSlide('splash');
+            }
+
+
+        };
+
+
+    </script>
+
+
+    <body onload="init();">
+        <img src="./img/gas_mask.gif" id="splashImg" class="absolute">
+        <ul id="slides">
+            <li id="splash">
+                <img src="./img/newGame.gif" id="newGameButton" class="absolute faded button" onclick="newGame()">
+                <img src="./img/settings.gif" id="settingsButton" class="absolute faded button">
+                <img src="./img/help.gif" id="helpButton" class="absolute faded button">
+            </li>
+            <li id="newGame">
+                <ul id="playersList">
+
+                </ul>
+                <div id="newGameInfo">
+                    <img src="./img/cancle.gif" id="cancleButton" class="cancleButton button" onclick="cancleLobby();"> 
+                    <h1>
+                        New Game
+                    </h1>
+                    <br/>
+                    Navigate here: <span id="controllerURL"></span> on a touch enabled device to add a player.
+                    <br/>
+                    <br/>
+                    <span id="startButton" onclick="startGame()"></span>
+                     
+
+                </div>
+
+
+
+            </li>
+        </ul>
+
+    </body>
+</html>
+
+
+
