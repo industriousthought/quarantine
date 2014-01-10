@@ -6,7 +6,7 @@ var app = require('express')()
 server.listen(80);
 
 pg.connect(process.env.HEROKU_POSTGRESQL_AMBER_URL, function(err, client, done) {
-  client.query('CREATE TABLE users(id VARCHAR(32), nick VARCHAR(32), fbID VARCHAR(32));', function(err, result) {
+  client.query('INSERT INTO users(id, nick, fbID) VALUES(\'1\', \'brian\', \'Doe\'), function(err, result) {
       done();
       if(err) return console.error('connect error!!!:' + err);
       console.log(result.rows);
