@@ -3,7 +3,7 @@ var app = require('express')()
   , server = require('http').createServer(app)
   , io = require('socket.io').listen(server);
 
-server.listen(80);
+server.listen(process.env.PORT);
 
 pg.connect(process.env.HEROKU_POSTGRESQL_AMBER_URL, function(err, client, done) {
   client.query('INSERT INTO users(id, nick, fbID) VALUES(\'1\', \'brian\', \'Doe\');', function(err, result) {
