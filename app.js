@@ -13,7 +13,7 @@ server.listen(80);
   //});
 //});
 
-var client = new pg.Client(process.env.DATABASE_URL);
+var client = new pg.Client(process.env.HEROKU_POSTGRESQL_AMBER_URL);
 client.connect();
 
 client.query('CREATE TABLE users(id VARCHAR(32), nick VARCHAR(32), fbID VARCHAR(32));');
