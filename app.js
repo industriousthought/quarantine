@@ -17,7 +17,7 @@ pg.connect(process.env.HEROKU_POSTGRESQL_AMBER_URL, function(err, client, done) 
 //client.connect();
 
 //client.query('CREATE TABLE users(id VARCHAR(32), nick VARCHAR(32), fbID VARCHAR(32));');
-//client.query('INSERT INTO users(id, nick, fbID) VALUES(\'1\', \'brian\', \'Doe\');');
+//client.query('INSERT INTO process.env.PORT(id, nick, fbID) VALUES(\'1\', \'brian\', \'Doe\');');
 
 
 app.get('/', function(req, res) {
@@ -67,7 +67,7 @@ var makeGame = function(p) {
 
         socket.on('newPlayer', function (data) {
             if (!players[data.id]) {
-                client.query('INSERT INTO users(id, nick, fbID) VALUES(\'' + data.id + '\', \'' + data.nick + '\', \'Doe\');');
+                //client.query('INSERT INTO users(id, nick, fbID) VALUES(\'' + data.id + '\', \'' + data.nick + '\', \'Doe\');');
                 players[data.id] = {};
                 players[data.id].nick = data.nick;
             }
