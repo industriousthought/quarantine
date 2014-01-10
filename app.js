@@ -16,7 +16,7 @@ server.listen(80);
 var client = new pg.Client(DATABASE_URL);
 client.connect();
 
-client.query('CREATE TABLE users(id VARCHAR(32), nick VARCHAR(32), fbID VARCHAR(32));', function(err, result) {
+client.query('CREATE TABLE users(id VARCHAR(32), nick VARCHAR(32), fbID VARCHAR(32));');
 //client.query('INSERT INTO users(id, nick, fbID) VALUES(\'1\', \'brian\', \'Doe\');');
 
 
