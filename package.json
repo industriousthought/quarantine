@@ -4,7 +4,7 @@
   "dependencies": {
     "express": "3.2.5",
     "socket.io": "0.9.14",
-    "pg": "2.x"
+    "pg": "9.3.2"
   },
   "engines": {
     "node": "0.8.21",
