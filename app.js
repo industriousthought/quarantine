@@ -5,16 +5,15 @@ var app = require('express')()
 
 server.listen(80);
 
-var port = process.env.PORT || 5000;
-var conString = "dbname=d6k6js98rpille host=ec2-174-129-197-200.compute-1.amazonaws.com port=' + port + ' user=flfxetvvtvfgtx password=RjWlyNAl5ZWSkJx0hlJ4w4RfIx sslmode=require";
-//var pgString = "postgres://flfxetvvtvfgtx:RjWlyNAl5ZWSkJx0hlJ4w4RfIx@ec2-174-129-197-200.compute-1.amazonaws.com:5432/d6k6js98rpille";
-app.listen(port, function() {
-  console.log("Listening on " + port);
+pg.connect(process.env.DATABASE_URL, function(err, client, done) {
+  client.query('CREATE TABLE users(id VARCHAR(32), nick VARCHAR(32), fbID VARCHAR(32));', function(err, result) {
+      done();
+      if(err) return console.error('connect error!!!:' + err);
+      console.log(result.rows);
   });
-var client = new pg.Client(conString);
-client.connect();
+});
 
-//client.query('CREATE TABLE users(id VARCHAR(32), nick VARCHAR(32), fbID VARCHAR(32));');
+//client.query();
 //client.query('INSERT INTO users(id, nick, fbID) VALUES(\'1\', \'brian\', \'Doe\');');
 
 
