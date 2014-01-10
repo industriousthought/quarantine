@@ -5,9 +5,12 @@ var app = require('express')()
 
 server.listen(80);
 
-var conString = "dbname=d6k6js98rpille host=ec2-174-129-197-200.compute-1.amazonaws.com port=' + (process.env.PORT || 5000) + ' user=flfxetvvtvfgtx password=RjWlyNAl5ZWSkJx0hlJ4w4RfIx sslmode=require";
+var port = process.env.PORT || 5000;
+var conString = "dbname=d6k6js98rpille host=ec2-174-129-197-200.compute-1.amazonaws.com port=' + port + ' user=flfxetvvtvfgtx password=RjWlyNAl5ZWSkJx0hlJ4w4RfIx sslmode=require";
 //var pgString = "postgres://flfxetvvtvfgtx:RjWlyNAl5ZWSkJx0hlJ4w4RfIx@ec2-174-129-197-200.compute-1.amazonaws.com:5432/d6k6js98rpille";
-
+app.listen(port, function() {
+  console.log("Listening on " + port);
+  });
 var client = new pg.Client(conString);
 client.connect();
 
