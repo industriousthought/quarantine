@@ -59,6 +59,14 @@ function testAPI() {
    FB.api('/me', function(response) {
        console.log('Good to see you, ' + response.name + '.');
    });
+   FB.getLoginStatus(function (response) {
+       if (response.authResponse) {
+           console.log('tokecn!!!!!!!!!!!!!!!!' + response.authResponse.accessToken);
+           //$('#AccessToken').val(response.authResponse.accessToken);
+       } else {
+           // do something...maybe show a login prompt
+       }
+   });
 }
 </script>
 
