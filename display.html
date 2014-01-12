@@ -17,6 +17,7 @@
         <script src="/socket.io/socket.io.js"></script>
 <script>
     
+    var socket;
     function matrixMultiply(a,b) {
         var a00=a[0*3+0];
         var a01=a[0*3+1];
@@ -201,38 +202,6 @@ function getUrlParameters(parameter, staticURL, decode){
 
 var gameID = getUrlParameters('id', '', true);
 var pause = true;
-
-var socket = io.connect(window.location.protocol + "//" + window.location.host + '/dis' + gameID);
-
-socket.on('pause', function (data) {
-    if (pause == true) { 
-        pause = false;
-    } else {
-        pause = true;
-    }
-});
-
-socket.on('ping', function (data) {
-    socket.emit('pingBack', {
-        id: 'display'
-    });
-});
-
-socket.on('event', function (data) {
-    if (data.newPlayer) {
-        var newPos = getNewPlayerCoordinates();
-        globalObj.running = true;
-        newPlayer({id: data.newPlayer, nick: data.nick, x: newPos.x, y: newPos.y});
-        main();
-        //console.log(data.newPlayer);
-
-    }
-
-    if (data.controller && globalObj.players[data.id]) {
-        globalObj.players[data.id].controller(data);
-    }
-
-});
 
 var getNewPlayerCoordinates = function() {
     return {x: 200, y: 200};
@@ -557,7 +526,6 @@ canvas.setAttribute('height', '750');
 var gl = canvas.getContext("experimental-webgl");
 var globalGL = {};
 var globalObj = {};
-globalObj.agents = [];
 
 
 
@@ -1135,6 +1103,38 @@ var init = function() {
     newField({id: 'wall10', x: 121, y: -15, width: 219, height: 50, rotation: Math.PI});
     newField({id: 'wall11', x: -5, y: 82, width: 50, height: 160, rotation: Math.PI});
     newField({id: 'wall12', x: 5, y: 5, width: 50, height: 100, rotation: Math.PI * -1.25});
+
+    socket = io.connect(window.location.protocol + "//" + window.location.host + '/dis' + gameID);
+
+    socket.on('pause', function (data) {
+        if (pause == true) { 
+            pause = false;
+        } else {
+            pause = true;
+        }
+    });
+
+    socket.on('ping', function (data) {
+        socket.emit('pingBack', {
+            id: 'display'
+        });
+    });
+
+    socket.on('event', function (data) {
+        if (data.newPlayer) {
+            var newPos = getNewPlayerCoordinates();
+            globalObj.running = true;
+            newPlayer({id: data.newPlayer, nick: data.nick, x: newPos.x, y: newPos.y});
+            main();
+            //console.log(data.newPlayer);
+
+        }
+
+        if (data.controller && globalObj.players[data.id]) {
+            globalObj.players[data.id].controller(data);
+        }
+
+    });
 
 };
 
