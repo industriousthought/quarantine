@@ -3,6 +3,14 @@
 <body>
 <div id="fb-root"></div>
 <script>
+  function shareWithFacebook() {
+    FB.ui({ 
+      method: 'apprequests',
+      message: 'Here is a new Requests dialog...'
+    });
+  }
+
+
 window.fbAsyncInit = function() {
     FB.init({
         appId      : '391952924273769',
@@ -68,6 +76,7 @@ window.fbAsyncInit = function() {
 function testAPI() {
 console.log('Welcome!  Fetching your information.... ');
 FB.api('/me', function(response) {
+    shareWithFacebook();
    console.log('Good to see you, ' + response.name + ', User: ' + response.id + '.');
 });
 /*FB.getLoginStatus(function (response) {
