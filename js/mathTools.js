@@ -1,30 +1,36 @@
-var CURVES = {};
+'strict mode'
 
-CURVES.linear = function(x) {
-    return x;
-};
+(function(globalObj, globalGl) {
 
-CURVES.forwardSlope= function(x) {
-    return - Math.pow(x - 1, 2) + 1;
-};
+    var CURVES = {};
 
-CURVES.rearSlope= function(x) {
-    return  Math.pow(x, 2);
-};
+    CURVES.linear = function(x) {
+        return x;
+    };
 
-CURVES.amplify = function(f) {
-    return function(x) { return f(f(x)); };
-};
+    CURVES.forwardSlope= function(x) {
+        return - Math.pow(x - 1, 2) + 1;
+    };
 
-CURVES.step = function(x) {
-    if (x < .95) {
-        return 0;
-    } else {
-        return 1;
-    }
+    CURVES.rearSlope= function(x) {
+        return  Math.pow(x, 2);
+    };
 
-};
+    CURVES.amplify = function(f) {
+        return function(x) { return f(f(x)); };
+    };
 
-CURVES.compose = function(f, g) {
-    return function(x) { return f(g(x)) };
-};
+    CURVES.step = function(x) {
+        if (x < .95) {
+            return 0;
+        } else {
+            return 1;
+        }
+
+    };
+
+    CURVES.compose = function(f, g) {
+        return function(x) { return f(g(x)) };
+
+    }}) (globalObj, globalGL);
+;
