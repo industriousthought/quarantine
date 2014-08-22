@@ -1,4 +1,4 @@
-'strict mode'
+'use strict';
 
 (function(globalObj, globalGl) {
 
@@ -10,7 +10,7 @@
             gl.attachShader(program, shaders[ii]);
         }
         if (opt_attribs) {
-            for (var ii = 0; ii < opt_attribs.length; ++ii) {
+            for (ii = 0; ii < opt_attribs.length; ++ii) {
                 gl.bindAttribLocation(
                     program,
                     opt_locations ? opt_locations[ii] : ii,
@@ -23,8 +23,8 @@
         var linked = gl.getProgramParameter(program, gl.LINK_STATUS);
         if (!linked) {
             // something went wrong with the link
-            lastError = gl.getProgramInfoLog (program);
-            error("Error in program linking:" + lastError);
+            var lastError = gl.getProgramInfoLog (program);
+            globalObj.error('Error in program linking:' + lastError);
 
             gl.deleteProgram(program);
             return null;
@@ -45,32 +45,32 @@
     };
 
     globalGl.createShaderFromScript = function (gl, scriptId, opt_shaderType, opt_errorCallback) {
-        var shaderSource = "";
+        var shaderSource = '';
         var shaderType;
         var shaderScript = document.getElementById(scriptId);
         if (!shaderScript) {
-            throw("*** Error: unknown script element" + scriptId);
+            throw('*** Error: unknown script element' + scriptId);
         }
         shaderSource = shaderScript.text;
 
         if (!opt_shaderType) {
-            if (shaderScript.type == "x-shader/x-vertex") {
+            if (shaderScript.type === 'x-shader/x-vertex') {
                 shaderType = gl.VERTEX_SHADER;
-            } else if (shaderScript.type == "x-shader/x-fragment") {
+            } else if (shaderScript.type === 'x-shader/x-fragment') {
                 shaderType = gl.FRAGMENT_SHADER;
-            } else if (shaderType != gl.VERTEX_SHADER && shaderType != gl.FRAGMENT_SHADER) {
-                throw("*** Error: unknown shader type");
+            } else if (shaderType !== gl.VERTEX_SHADER && shaderType !== gl.FRAGMENT_SHADER) {
+                throw('*** Error: unknown shader type');
                 return null;
             }
         }
 
-        return loadShader(
+        return globalObj.loadShader(
                 gl, shaderSource, opt_shaderType ? opt_shaderType : shaderType,
                 opt_errorCallback);
     };
 
     globalGl.loadShader = function(gl, shaderSource, shaderType, opt_errorCallback) {
-        var errFn = opt_errorCallback || error;
+        var errFn = opt_errorCallback || globalObj.error;
         // Create the shader object
         var shader = gl.createShader(shaderType);
 
@@ -84,14 +84,14 @@
         var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
         if (!compiled) {
             // Something went wrong during compilation; get the error
-            lastError = gl.getShaderInfoLog(shader);
-            errFn("*** Error compiling shader '" + shader + "':" + lastError);
+            var lastError = gl.getShaderInfoLog(shader);
+            errFn('*** Error compiling shader "' + shader + '":' + lastError);
             gl.deleteShader(shader);
             return null;
         }
 
         return shader;
-    }
+    };
 
     globalGl.textures = {
         'player': {image: './hero.png', textureIndex: 0, width: 89, height: 50, texHorizontalNum: 6, texVerticalNum: 2, tileCount: [6, 5]},
@@ -105,70 +105,70 @@
         'car4': {image: './car4.png', textureIndex: 5, width: 150, height: 225, texHorizontalNum: 1, texVerticalNum: 1, tileCount: [1, 1]},
         'init': function() {
             var i;
-            for (i in textures) {
+            for (i in globalObj.textures) {
 
                 (function (){
                     var index = i;
                     var image = new Image();
                     image.onload = function() {
-                        textures[index].vertexBuffer = gl.createBuffer();
-                        gl.bindBuffer(gl.ARRAY_BUFFER, textures[index].vertexBuffer);
+                        globalObj.textures[index].vertexBuffer = globalGl.gl.createBuffer();
+                        globalGl.gl.bindBuffer(globalGl.gl.ARRAY_BUFFER, globalObj.textures[index].vertexBuffer);
 
                         var xMin = 0;
-                        var xMax = textures[index].width;
+                        var xMax = globalObj.textures[index].width;
                         var yMin = 0;
-                        var yMax = textures[index].height;
+                        var yMax = globalObj.textures[index].height;
 
 
-                        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                        globalGl.gl.bufferData(globalGl.gl.ARRAY_BUFFER, new Float32Array([
                                 xMin, yMax,
                                 xMax, yMax,
                                 xMin, yMin,
                                 xMin, yMin,
                                 xMax, yMax,
-                                xMax, yMin]), gl.STATIC_DRAW);
-                        gl.enableVertexAttribArray(globalGL.positionLocation);
-                        gl.vertexAttribPointer(globalGL.positionLocation, 2, gl.FLOAT, false, 0, 0);
+                                xMax, yMin]), globalGl.gl.STATIC_DRAW);
+                        globalGl.gl.enableVertexAttribArray(globalGl.positionLocation);
+                        globalGl.gl.vertexAttribPointer(globalGl.positionLocation, 2, globalGl.gl.FLOAT, false, 0, 0);
 
-                        textures[index].texCoordLocation = gl.getAttribLocation(globalGL.program, 'a_texCoord');
+                        globalObj.textures[index].texCoordLocation = globalGl.gl.getAttribLocation(globalGl.program, 'a_texCoord');
 
 
-                        textures[index].texCoordBuffer = gl.createBuffer();
-                        gl.bindBuffer(gl.ARRAY_BUFFER, textures[index].texCoordBuffer);
-                        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                        globalObj.textures[index].texCoordBuffer = globalGl.gl.createBuffer();
+                        globalGl.gl.bindBuffer(globalGl.gl.ARRAY_BUFFER, globalObj.textures[index].texCoordBuffer);
+                        globalGl.gl.bufferData(globalGl.gl.ARRAY_BUFFER, new Float32Array([
                                     0,  1,
                                     1,  1,
                                     0,  0,
                                     0,  0,
                                     1,  1,
-                                    1,  0]), gl.STATIC_DRAW);
-                        gl.enableVertexAttribArray( textures[index].texCoordLocation);
-                        gl.vertexAttribPointer(textures[index].texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+                                    1,  0]), globalGl.gl.STATIC_DRAW);
+                        globalGl.gl.enableVertexAttribArray( globalObj.textures[index].texCoordLocation);
+                        globalGl.gl.vertexAttribPointer(globalObj.textures[index].texCoordLocation, 2, globalGl.gl.FLOAT, false, 0, 0);
 
                         // Create a texture.
-                        textures[index].texture = gl.createTexture();
-                        textures[index].u_imageLocation = gl.getUniformLocation(globalGL.program, "u_image" + textures[index].textureIndex);
-                        gl.uniform1i(textures[index].u_imageLocation, textures[index].textureIndex); 
+                        globalObj.textures[index].texture = globalGl.gl.createTexture();
+                        globalObj.textures[index].u_imageLocation = globalGl.gl.getUniformLocation(globalGl.program, 'u_image' + globalObj.textures[index].textureIndex);
+                        globalGl.gl.uniform1i(globalObj.textures[index].u_imageLocation, globalObj.textures[index].textureIndex); 
 
-                        gl.bindTexture(gl.TEXTURE_2D, textures[index].texture);
+                        globalGl.gl.bindTexture(globalGl.gl.TEXTURE_2D, globalObj.textures[index].texture);
 
 
                         // Upload the image into the texture.
-                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+                        globalGl.gl.texImage2D(globalGl.gl.TEXTURE_2D, 0, globalGl.gl.RGBA, globalGl.gl.RGBA, globalGl.gl.UNSIGNED_BYTE, image);
 
                         // Set the parameters so we can render any size image.
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+                        globalGl.gl.texParameteri(globalGl.gl.TEXTURE_2D, globalGl.gl.TEXTURE_WRAP_S, globalGl.gl.CLAMP_TO_EDGE);
+                        globalGl.gl.texParameteri(globalGl.gl.TEXTURE_2D, globalGl.gl.TEXTURE_WRAP_T, globalGl.gl.CLAMP_TO_EDGE);
+                        globalGl.gl.texParameteri(globalGl.gl.TEXTURE_2D, globalGl.gl.TEXTURE_MIN_FILTER, globalGl.gl.NEAREST);
+                        globalGl.gl.texParameteri(globalGl.gl.TEXTURE_2D, globalGl.gl.TEXTURE_MAG_FILTER, globalGl.gl.NEAREST);
 
-                        gl.bindTexture(gl.TEXTURE_2D, null);
+                        globalGl.gl.bindTexture(globalGl.gl.TEXTURE_2D, null);
 
 
 
                     };
 
-                    image.src = textures[i].image;  
+                    image.src = globalObj.textures[i].image;  
                 })();
             }
         }
@@ -178,32 +178,35 @@
 
 
     // Get A
-    globalGl.overlay = document.getElementById("overlay").getContext('2d');
-    globalGl.canvas = document.getElementById("display");
-    globalGl.debug = document.getElementById("debug");
+    globalGl.overlay = document.getElementById('overlay').getContext('2d');
+    globalGl.canvas = document.getElementById('display');
+    globalGl.debug = document.getElementById('debug');
     globalGl.canvas.setAttribute('width', '1200');
-    gloablGl.canvas.setAttribute('height', '750');
-    globalGl.gl = canvas.getContext("experimental-webgl");
+    globalGl.canvas.setAttribute('height', '750');
+    globalGl.gl = globalObj.canvas.getContext('experimental-webgl');
 
 
 
 
     // setup a GLSL program
-    gloablGl.vertexShader = createShaderFromScript(gl, "2d-vertex-shader");
-    gloablGl.fragmentShader = createShaderFromScript(gl, "2d-fragment-shader");
-    globalGL.program = loadProgram(gl, [vertexShader, fragmentShader]);
-    gloablGl.gl.useProgram(globalGL.program);
+    globalGl.vertexShader = globalGl.createShaderFromScript(globalGl.gl, '2d-vertex-shader');
+    globalGl.fragmentShader = globalGl.createShaderFromScript(globalGl.gl, '2d-fragment-shader');
+    globalGl.program = globalGl.loadProgram(globalGl.gl, [globalGl.vertexShader, globalGl.fragmentShader]);
+    globalGl.gl.useProgram(globalGl.program);
 
     // look up where the vertex data needs to go.
-    globalGL.positionLocation = gl.getAttribLocation(globalGL.program, "a_position");
+    globalGl.positionLocation = globalGl.gl.getAttribLocation(globalGl.program, 'a_position');
 
-    globalGL.translationLocation = gl.getUniformLocation(globalGL.program, "u_translation");
+    globalGl.translationLocation = globalGl.gl.getUniformLocation(globalGl.program, 'u_translation');
 
     //Get rotation location
-    globalGL.rotationLocation = gl.getUniformLocation(globalGL.program, "u_rotation");
+    globalGl.rotationLocation = globalGl.gl.getUniformLocation(globalGl.program, 'u_rotation');
 
     // set the resolution
-    globalGL.resolutionLocation = gl.getUniformLocation(globalGL.program, "u_resolution");
+    globalGl.resolutionLocation = globalGl.gl.getUniformLocation(globalGl.program, 'u_resolution');
 
-    gloablGl.gl.uniform2f(globalGL.resolutionLocation, canvas.width, canvas.height)}) (globalObj, globalGL);
-    ;
+    globalGl.gl.uniform2f(globalGl.resolutionLocation, globalObj.canvas.width, globalObj.canvas.height);
+
+
+}) (globalObj, globalGl);
+    

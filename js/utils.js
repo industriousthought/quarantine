@@ -1,6 +1,6 @@
-'strict mode'
+'use strict';
 
-(function(globalObj, globalGl) {
+(function(globalObj) {
 
 
     if (!window.requestAnimationFrame) {
@@ -23,7 +23,7 @@
     }
 
 
-    function getUrlParameters(parameter, staticURL, decode){
+    globalObj.getUrlParameters = function(parameter, staticURL, decode){
         /*
            Function: getUrlParameters
            Description: Get the value of URL parameters either from 
@@ -32,12 +32,13 @@
            URL: www.code-tricks.com
            */
         var currLocation = (staticURL.length)? staticURL : window.location.search,
-            parArr = currLocation.split("?")[1].split("&"),
+            parArr = currLocation.split('?')[1].split('&'),
+            parr, 
             returnBool = true;
 
         for(var i = 0; i < parArr.length; i++){
-            parr = parArr[i].split("=");
-            if(parr[0] == parameter){
+            parr = parArr[i].split('=');
+            if(parr[0] === parameter){
                 return (decode) ? decodeURIComponent(parr[1]) : parr[1];
                 returnBool = true;
             }else{
@@ -47,5 +48,6 @@
 
         if(!returnBool) return false;  
 
-    }) (globalObj, globalGL);
-}
+    };
+
+}) (globalObj);

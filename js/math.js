@@ -1,6 +1,6 @@
-'strict mode'
+'use strict';
 
-(function(globalObj, globalGl) {
+(function(globalObj) {
 
 
     globalObj.matrixMultiply = function(a,b) {
@@ -23,7 +23,7 @@
         var b21=b[2*3+1];
         var b22=b[2*3+2];
         return [a00*b00+a01*b10+a02*b20,a00*b01+a01*b11+a02*b21,a00*b02+a01*b12+a02*b22,a10*b00+a11*b10+a12*b20,a10*b01+a11*b11+a12*b21,a10*b02+a11*b12+a12*b22,a20*b00+a21*b10+a22*b20,a20*b01+a21*b11+a22*b21,a20*b02+a21*b12+a22*b22];
-    }
+    };
 
     globalObj.makeTranslation = function(tx, ty) {
         return [
@@ -31,7 +31,7 @@
         0, 1, 0,
         tx, ty, 1
             ];
-    }
+    };
 
     globalObj.makeRotation = function(angleInRadians) {
         var c = Math.cos(angleInRadians);
@@ -41,7 +41,7 @@
             s, c, 0,
             0, 0, 1
                 ];
-    }
+    };
 
     globalObj.makeScale = function(sx, sy) {
         return [
@@ -49,14 +49,14 @@
         0, sy, 0,
         0, 0, 1
             ];
-    }
+    };
 
     globalObj.rotatePoint = function(pointX, pointY, originX, originY, angle) {
         return [
             Math.cos(angle) * (pointX-originX) - Math.sin(angle) * (pointY-originY) + originX,
         Math.sin(angle) * (pointX-originX) + Math.cos(angle) * (pointY-originY) + originY
             ];
-    }
+    };
 
     globalObj.Square = function(p) {
         var xMin, xMax, yMin, yMax, ys, xs, i;
@@ -113,7 +113,7 @@
             var output = [];
             var i = 0;
             for (i = 0; i < this.vertices.length; i++) {  
-                output[i] = rotatePoint(this.vertices[i][0], this.vertices[i][1], this.center[0], this.center[1], theta); 
+                output[i] = globalObj.rotatePoint(this.vertices[i][0], this.vertices[i][1], this.center[0], this.center[1], theta); 
             }
             this.vertices = output;
         };
@@ -167,12 +167,12 @@
         };
 
         var dist2 = function(v, w) { 
-            return Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2) 
+            return Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2) ;
         };
 
         var distToSegmentSquared = function(p, v, w) {
             var l2 = dist2(v, w);
-            if (l2 == 0) return dist2(p, v);
+            if (l2 === 0) return dist2(p, v);
             var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
             if (t < 0) return dist2(p, v);
             if (t > 1) return dist2(p, w);
@@ -186,7 +186,7 @@
 
         this.getClosestVertices = function(x, y) {
 
-            var min, otherMin;
+            var min;
             var distances = [];
             var i = 0;
             for (i = 0; i < this.vertices.length; i++) {
@@ -195,7 +195,7 @@
 
             for (i = 0; i < distances.length; i++) {
 
-                if (min == null) {
+                if (min === null) {
                     min = i;
                 } else {
                     if (distances[min] > distances[i]) {
@@ -211,8 +211,8 @@
     };
 
     globalObj.findPerpendicularPoint = function(xp, yp, x1, y1, x2, y2) {
-        var t =  ((xp - x1) * (x2 - x1) + (yp - y1) * (y2 - y1)) / (Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
-            return [x1 + t * (x2 - x1), y1 + t * (y2 - y1)];
+        var t =  ((xp - x1) * (x2 - x1) + (yp - y1) * (y2 - y1)) / (Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        return [x1 + t * (x2 - x1), y1 + t * (y2 - y1)];
 
     };
 
@@ -220,7 +220,7 @@
         var i, j;
         var c = false;
         for (i = 0, j = numberOfVertices - 1; i < numberOfVertices; j = i++) {
-            if ( ((yCoordinates[i] > testY) != (yCoordinates[j] > testY)) &&
+            if ( ((yCoordinates[i] > testY) !== (yCoordinates[j] > testY)) &&
                     (testX < (xCoordinates[j] - xCoordinates[i]) * (testY - yCoordinates[i]) / (yCoordinates[j] - yCoordinates[i]) + xCoordinates[i]) )
                 c = !c;
         }
@@ -248,5 +248,38 @@
 
         };
 
-    }}) (globalObj, globalGL);
-;
+    };
+
+    globalObj.CURVES = {};
+
+    globalObj.CURVES.linear = function(x) {
+        return x;
+    };
+
+    globalObj.CURVES.forwardSlope= function(x) {
+        return - Math.pow(x - 1, 2) + 1;
+    };
+
+    globalObj.CURVES.rearSlope= function(x) {
+        return  Math.pow(x, 2);
+    };
+
+    globalObj.CURVES.amplify = function(f) {
+        return function(x) { return f(f(x)); };
+    };
+
+    globalObj.CURVES.step = function(x) {
+        if (x < 0.95) {
+            return 0;
+        } else {
+            return 1;
+        }
+
+    };
+
+    globalObj.CURVES.compose = function(f, g) {
+        return function(x) { return f(g(x)); };
+
+    };
+
+}) (globalObj);

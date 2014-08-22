@@ -1,4 +1,4 @@
-'strict mode'
+'use strict';
 
 (function(globalObj, globalGl) {
 
@@ -53,7 +53,7 @@
                             value = parseInt(value);
                         }
                         p.object.style[i] = value + p.properties[i].suffix;
-                    };
+                    }
                     return true;
                 } else {
                     for (i in p.properties) {
@@ -128,7 +128,7 @@
                 if (running === false) {
                     running = true;
                     animate();
-                };
+                }
             } else {
                 console.log('null animation event caught');
             }
