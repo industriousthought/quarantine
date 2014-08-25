@@ -4,116 +4,105 @@
     <head>
 
 
-    
+        <script>
+
+            var globalGL = {};
+            var globalObj = {};
+
+
+        </script>
+
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1">
 
         <link rel="stylesheet" type="text/css" href="./css/reset.css" />
         <link rel="stylesheet" type="text/css" href="./css/controllerStyle.css" />
 
-        <script src="./js/utils.js"></script>
-<script src="./js/animationEffects.js">
+        <script src="./lib/utils.js"></script>
+        <script src="./lib/animationEffects.js">
 
-</script>
-<script src="./js/mathTools.js">
+        </script>
+        <script src="./lib/math.js">
 
-</script>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    var closeCurrentSlide = false;
-    var changeSlide = function(slide) {
-        if (closeCurrentSlide) {
-            AnimationManager.addAnimation(closeCurrentSlide);
-        }
-
-        var slide = new AnimationEvent({
-            properties: {
-                opacity: {
-                    start: 0,
-                    stop: 1,
-                    suffix: '',
-                    curve: CURVES.rearSlope
-
-                },
-                zIndex: {
-                    start: 0,
-                    stop: 1,
-                    suffix: '',
-                    curve: CURVES.step
-
+        </script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var closeCurrentSlide = false;
+            var changeSlide = function(slide) {
+                if (closeCurrentSlide) {
+                    AnimationManager.addAnimation(closeCurrentSlide);
                 }
-            },
-            length: 1000,
-            object: document.getElementById(slide)
-        });
-        AnimationManager.addAnimation(slide.add);
 
-        closeCurrentSlide = slide.remove;
-        
-    };
+                var slide = new AnimationEvent({
+                    properties: {
+                        opacity: {
+                            start: 0,
+                            stop: 1,
+                            suffix: '',
+                            curve: globalObj,CURVES.rearSlope
 
+                        },
+                        zIndex: {
+                            start: 0,
+                            stop: 1,
+                            suffix: '',
+                            curve: globalObj,CURVES.step
 
-function getUrlParameters(parameter, staticURL, decode){
-   var currLocation = (staticURL.length)? staticURL : window.location.search,
-       parArr = currLocation.split("?")[1].split("&"),
-       returnBool = true;
-   
-   for(var i = 0; i < parArr.length; i++){
-        parr = parArr[i].split("=");
-        if(parr[0] == parameter){
-            return (decode) ? decodeURIComponent(parr[1]) : parr[1];
-            returnBool = true;
-        }else{
-            returnBool = false;            
-        }
-   }
-   
-   if(!returnBool) return false;  
-}
-
-var gameID = getUrlParameters('id', '', true);
-
-    var socket = io.connect(window.location.protocol + "//" + window.location.host + '/con' + gameID);
-    socket.on('youAre', function (data) {
-    });
-    socket.on('deadPlayer', function (data) {
-        if (window.id == data.id) {
-            alive = null;
-            document.getElementById('controlPanel').style.visibility = 'hidden';
-            document.getElementById('dead').onclick = function() {
-                document.getElementById('controlPanel').style.visibility = 'hidden';
-                changeSlide('dead');
-                socket.emit('newPlayer', {
-                    id: window.id
+                        }
+                    },
+                    length: 1000,
+                    object: document.getElementById(slide)
                 });
-                start();
+                AnimationManager.addAnimation(slide.add);
+
+                closeCurrentSlide = slide.remove;
+
             };
-            changeSlide('dead');
-
-            console.log(window.id + ', ' + data.id);
-        }
-    });
 
 
-    socket.on('ping', function (data) {
-        socket.emit('pingBack', {
-            id: id
-        });
-    });
+            var gameID = globalObj.getUrlParameters('id', '', true);
 
-    var togglePause = function() {
-        console.log('pause pressed');
-        socket.emit('pause', {
-            id: id
-        });
-        
-    };
+            var socket = io.connect(window.location.protocol + "//" + window.location.host + '/con' + gameID);
+            socket.on('youAre', function (data) {
+            });
+            socket.on('deadPlayer', function (data) {
+                if (window.id == data.id) {
+                    alive = null;
+                    document.getElementById('controlPanel').style.visibility = 'hidden';
+                    document.getElementById('dead').onclick = function() {
+                        document.getElementById('controlPanel').style.visibility = 'hidden';
+                        changeSlide('dead');
+                        socket.emit('newPlayer', {
+                            id: window.id
+                        });
+                        start();
+                    };
+                    changeSlide('dead');
 
-    var reset = function() {
-        document.cookie = null;
-        firstTime();
-    };
-        
-</script>
+                    console.log(window.id + ', ' + data.id);
+                }
+            });
+
+
+            socket.on('ping', function (data) {
+                socket.emit('pingBack', {
+                    id: id
+                });
+            });
+
+            var togglePause = function() {
+                console.log('pause pressed');
+                socket.emit('pause', {
+                    id: id
+                });
+
+            };
+
+            var reset = function() {
+                document.cookie = null;
+                firstTime();
+            };
+
+        </script>
 
     </head>
 
@@ -126,35 +115,35 @@ var gameID = getUrlParameters('id', '', true);
 
         <ul id="slides">
             <li id="returnPlayer" class="fullScreen">
-                <h1 id="welcome">Welcome Back</h1> 
-                
-                <div id="returnPlayerStart" class="button">
-                    Start
-                </div>
+            <h1 id="welcome">Welcome Back</h1> 
+
+            <div id="returnPlayerStart" class="button">
+                Start
+            </div>
 
             </li>
 
             <li id="firstTime" class="fullScreen">
-                <h1> Quarantine!</h1> 
-                
-                Enter you player name: <input type="text" id="nick"><br>
-                <div id="newPlayer" class="button">
-                    Submit
-                </div>
+            <h1> Quarantine!</h1> 
+
+            Enter you player name: <input type="text" id="nick"><br>
+            <div id="newPlayer" class="button">
+                Submit
+            </div>
             </li>
 
             <li id="dead" class="fullScreen">
-                <h1>You Died!</h1>
+            <h1>You Died!</h1>
 
-                <div id="restart" class="button">
-                    Do over?
-                </div>
+            <div id="restart" class="button">
+                Do over?
+            </div>
 
 
             </li>
 
             <li id="controlPanel" class="fullScreen">
-                <br/>
+            <br/>
 
             </li>
         </ul>
@@ -162,237 +151,218 @@ var gameID = getUrlParameters('id', '', true);
 
         <script>
 
-    if (!window.requestAnimationFrame) {
-      window.requestAnimationFrame = (window.webkitRequestAnimationFrame ||
-                                      window.mozRequestAnimationFrame ||
-                                      window.msRequestAnimationFrame ||
-                                      window.oRequestAnimationFrame ||
-                                      function (callback) {
-                                        return window.setTimeout(callback, 17 /*~ 1000/60*/);
-                                      });
-    }
+            var touches = [];
+            var controllers = [];
+            var alive = null;
 
-    if (!window.cancelAnimationFrame) {
-      window.cancelAnimationFrame = (window.cancelRequestAnimationFrame ||
-                                     window.webkitCancelAnimationFrame || window.webkitCancelRequestAnimationFrame ||
-                                     window.mozCancelAnimationFrame || window.mozCancelRequestAnimationFrame ||
-                                     window.msCancelAnimationFrame || window.msCancelRequestAnimationFrame ||
-                                     window.oCancelAnimationFrame || window.oCancelRequestAnimationFrame ||
-                                     window.clearTimeout);
-    }
+            var id = new Date().getTime();
 
-    var touches = [];
-    var controllers = [];
-    var alive = null;
+            var firstTime = function() {
 
-    var id = new Date().getTime();
+                changeSlide('firstTime');
+                document.getElementById('newPlayer').onclick = function() {
+                    var nick = document.getElementById('nick').value;
+                    document.cookie = id;
+                    document.getElementById('firstTime').style.visibility = 'hidden';
+                    socket.emit('newPlayer', {
+                        id: document.cookie,
+                        nick: nick
+                    });
+                    start();
+                };
+            };
 
-    var firstTime = function() {
+            var init = function() {
 
-        changeSlide('firstTime');
-        document.getElementById('newPlayer').onclick = function() {
-            var nick = document.getElementById('nick').value;
-            document.cookie = id;
-            document.getElementById('firstTime').style.visibility = 'hidden';
-            socket.emit('newPlayer', {
-                id: document.cookie,
-                nick: nick
-            });
-            start();
-        };
-    };
-    
-    var init = function() {
+                window.start = function() {
 
-        window.start = function() {
+                    changeSlide('controlPanel');
 
-            changeSlide('controlPanel');
+                    var height = window.innerHeight / 1.35;
+                    var width = window.innerWidth / 2.25;
+                    var leftJoystick = new Controller({id: 'leftJoystick', bottom: 20, left: 20, width: width, height: height});
+                    var rightJoystick = new Controller({id: 'rightJoystick', bottom: 20, right: 20, width: width, height: height});
 
-            var height = window.innerHeight / 1.35;
-            var width = window.innerWidth / 2.25;
-            var leftJoystick = new Controller({id: 'leftJoystick', bottom: 20, left: 20, width: width, height: height});
-            var rightJoystick = new Controller({id: 'rightJoystick', bottom: 20, right: 20, width: width, height: height});
+                    alive = true;
 
-            alive = true;
+                    (function animloop(){
+                        var now = new Date();
 
-            (function animloop(){
-                var now = new Date();
+                        if (alive) {
+                            window.requestAnimationFrame(animloop);
+                        }
+                        if (leftJoystick.controlling) { 
+                            leftJoystick.iterate();
+                        };
+                        if (rightJoystick.controlling) { 
+                            rightJoystick.iterate();
+                        };
+                    })();
 
-                if (alive) {
-                    window.requestAnimationFrame(animloop);
+                };
+
+
+                if (document.cookie) { 
+                    socket.emit('checkPlayer', {
+                        id: document.cookie
+                    });
+                    socket.on('idExists', function(data) {
+                        if (data.id == document.cookie) {
+                            document.getElementById('welcome').innerHTML += ' ' + data.nick;
+                            socket.on('idExists', null);
+                            changeSlide('returnPlayer');
+                            document.getElementById('returnPlayerStart').onclick = function() {
+                                socket.emit('newPlayer', {
+                                    id: document.cookie
+                                });
+                                start();
+                            };
+                            } else {
+
+                        }
+
+                    });
+                    socket.on('idNotExist', function(data) {
+                        socket.on('idNotExist', null);
+                        firstTime();
+                    });
+
+                    } else {
+                    firstTime();
                 }
-                if (leftJoystick.controlling) { 
-                    leftJoystick.iterate();
+
+            };
+
+            var newTouch = function(e) {
+                e.preventDefault();
+                var fn = null;
+                for (var i=0; i <  e.changedTouches.length; i++) {
+                    if (!controllers[e.changedTouches[i].target.getAttribute('data-controller')].controlling) {
+                        console.log(controllers[e.changedTouches[i].target.getAttribute('data-controller')].sensor);
+                        controllers[e.changedTouches[i].target.getAttribute('data-controller')].controllerStart(e.changedTouches[i]);
+
+                        touches[e.changedTouches[i].identifier] = controllers[e.changedTouches[i].target.getAttribute('data-controller')];
+
+                    } 
+                }
+            };
+
+            var stopTouch = function(e) {
+                e.preventDefault();
+                var t = {};
+
+                for (var i=0; i <  e.changedTouches.length; i++) {
+                    t = touches[e.changedTouches[i].identifier];
+                    t.controllerStop();
+                    touches[e.changedTouches[i].identifier];
+                }
+
+            };
+
+            var moveTouch = function(e) {
+                e.preventDefault();
+                var t = {};
+
+                for (var i=0; i <  e.changedTouches.length; i++) {
+                    t = touches[e.changedTouches[i].identifier];
+                    t.controllerMove({x: e.changedTouches[i].pageX, y: e.changedTouches[i].pageY});
+                }
+
+            };
+
+
+            var Controller = function(p) {
+
+                controllers[p.id] = this;
+
+                this.id = p.id;
+                this.sensor = document.createElement('div');
+                this.sensor.className = 'sensor';
+                this.sensor.style.top = p.top + 'px' || null;
+                this.sensor.style.left = p.left + 'px' || null;
+                this.sensor.style.bottom = p.bottom + 'px' || null;
+                this.sensor.style.right = p.right + 'px' || null;
+                this.sensor.style.width = p.width + 'px' || null;
+                this.sensor.style.height = p.height + 'px' || null;
+                this.sensor.setAttribute('data-controller', this.id);
+                document.getElementById('controlPanel').appendChild(this.sensor);
+
+                this.sensor.addEventListener('touchstart', newTouch, false);
+                this.sensor.addEventListener('touchmove', moveTouch, false);
+                this.sensor.addEventListener('touchend', stopTouch, false);
+
+
+                this.img = new Image();
+                this.img.src = 'joystick.png';
+                this.img.className = 'joystick';
+                this.sensor.appendChild(this.img);
+
+                this.controlling = null;
+
+                this.drawControl = function() {
+                    if (this.controlling) {
+                    }
+
                 };
-                if (rightJoystick.controlling) { 
-                    rightJoystick.iterate();
-                };
-            })();
 
-        };
-
-
-        if (document.cookie) { 
-            socket.emit('checkPlayer', {
-                id: document.cookie
-            });
-            socket.on('idExists', function(data) {
-                if (data.id == document.cookie) {
-                    document.getElementById('welcome').innerHTML += ' ' + data.nick;
-                    socket.on('idExists', null);
-                    changeSlide('returnPlayer');
-                    document.getElementById('returnPlayerStart').onclick = function() {
-                        socket.emit('newPlayer', {
-                            id: document.cookie
-                        });
-                        start();
+                this.controllerStart = function(e) {
+                    var offset = getOffset(this.sensor);
+                    this.controlling = {
+                        id: e.identifier,
+                        originX: e.pageX,
+                        originY: e.pageY,
+                        currentX: e.pageX,
+                        currentY: e.pageY
                     };
-                } else {
+                    this.img.style.visibility = 'visible';
+                    this.img.style.left = (e.pageX - offset.left - 55) + 'px'; 
+                    this.img.style.top = (e.pageY - offset.top - 55) + 'px';
 
+                };
+
+                this.controllerStop = function(e) {
+                    this.controlling = null;
+                    this.img.style.visibility = 'hidden';
+                    socket.emit('event', { 
+                        x: null,
+                        y: null,
+                        controller: this.id,
+                        id: window.id
+                    });
+                };
+
+                this.iterate = function() {
+                    var distanceX = 0;
+                    distanceX = (this.controlling.originX - this.controlling.currentX) / 50;
+                    var distanceY = 0;
+                    distanceY = (this.controlling.originY - this.controlling.currentY) / 50;
+                    socket.emit('event', {
+                        x: distanceX,
+                        y: distanceY,
+                        controller: this.id,
+                        id: window.id
+                    });
+                };
+
+                this.controllerMove = function(e) {
+                    this.controlling.currentX = e.x;
+                    this.controlling.currentY = e.y;
+                };
+
+
+            };
+
+            function getOffset( el ) {
+                var _x = 0;
+                var _y = 0;
+                while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
+                    _x += el.offsetLeft - el.scrollLeft;
+                    _y += el.offsetTop - el.scrollTop;
+                    el = el.offsetParent;
                 }
-
-            });
-            socket.on('idNotExist', function(data) {
-                socket.on('idNotExist', null);
-                firstTime();
-            });
-                
-        } else {
-            firstTime();
-        }
-
-    };
-
-    var newTouch = function(e) {
-        e.preventDefault();
-        var fn = null;
-        for (var i=0; i <  e.changedTouches.length; i++) {
-            if (!controllers[e.changedTouches[i].target.getAttribute('data-controller')].controlling) {
-                console.log(controllers[e.changedTouches[i].target.getAttribute('data-controller')].sensor);
-                controllers[e.changedTouches[i].target.getAttribute('data-controller')].controllerStart(e.changedTouches[i]);
-
-                touches[e.changedTouches[i].identifier] = controllers[e.changedTouches[i].target.getAttribute('data-controller')];
-
-            } 
-        }
-    };
-
-    var stopTouch = function(e) {
-        e.preventDefault();
-        var t = {};
-
-        for (var i=0; i <  e.changedTouches.length; i++) {
-            t = touches[e.changedTouches[i].identifier];
-            t.controllerStop();
-            touches[e.changedTouches[i].identifier];
-        }
-
-    };
-
-    var moveTouch = function(e) {
-        e.preventDefault();
-        var t = {};
-
-        for (var i=0; i <  e.changedTouches.length; i++) {
-            t = touches[e.changedTouches[i].identifier];
-            t.controllerMove({x: e.changedTouches[i].pageX, y: e.changedTouches[i].pageY});
-        }
-
-    };
-
-
-    var Controller = function(p) {
-
-        controllers[p.id] = this;
-
-        this.id = p.id;
-        this.sensor = document.createElement('div');
-        this.sensor.className = 'sensor';
-        this.sensor.style.top = p.top + 'px' || null;
-        this.sensor.style.left = p.left + 'px' || null;
-        this.sensor.style.bottom = p.bottom + 'px' || null;
-        this.sensor.style.right = p.right + 'px' || null;
-        this.sensor.style.width = p.width + 'px' || null;
-        this.sensor.style.height = p.height + 'px' || null;
-        this.sensor.setAttribute('data-controller', this.id);
-        document.getElementById('controlPanel').appendChild(this.sensor);
-
-        this.sensor.addEventListener('touchstart', newTouch, false);
-        this.sensor.addEventListener('touchmove', moveTouch, false);
-        this.sensor.addEventListener('touchend', stopTouch, false);
-
-
-        this.img = new Image();
-        this.img.src = 'joystick.png';
-        this.img.className = 'joystick';
-        this.sensor.appendChild(this.img);
-
-        this.controlling = null;
-
-        this.drawControl = function() {
-            if (this.controlling) {
+                return { top: _y, left: _x };
             }
 
-        };
-
-        this.controllerStart = function(e) {
-            var offset = getOffset(this.sensor);
-            this.controlling = {
-                id: e.identifier,
-                originX: e.pageX,
-                originY: e.pageY,
-                currentX: e.pageX,
-                currentY: e.pageY
-            };
-            this.img.style.visibility = 'visible';
-            this.img.style.left = (e.pageX - offset.left - 55) + 'px'; 
-            this.img.style.top = (e.pageY - offset.top - 55) + 'px';
-
-        };
-        
-        this.controllerStop = function(e) {
-            this.controlling = null;
-            this.img.style.visibility = 'hidden';
-            socket.emit('event', { 
-                x: null,
-                y: null,
-                controller: this.id,
-                id: window.id
-            });
-        };
-
-        this.iterate = function() {
-            var distanceX = 0;
-            distanceX = (this.controlling.originX - this.controlling.currentX) / 50;
-            var distanceY = 0;
-            distanceY = (this.controlling.originY - this.controlling.currentY) / 50;
-            socket.emit('event', {
-                x: distanceX,
-                y: distanceY,
-                controller: this.id,
-                id: window.id
-            });
-        };
-
-        this.controllerMove = function(e) {
-            this.controlling.currentX = e.x;
-            this.controlling.currentY = e.y;
-        };
-
-
-    };
-
-    function getOffset( el ) {
-        var _x = 0;
-        var _y = 0;
-        while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
-            _x += el.offsetLeft - el.scrollLeft;
-            _y += el.offsetTop - el.scrollTop;
-            el = el.offsetParent;
-        }
-        return { top: _y, left: _x };
-    }
-        
         </script>
     </body>
 
